@@ -1,0 +1,1469 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hasil Laboratorium Klinik</title>
+<meta name="description" content="Aplikasi pencatatan dan pencetakan hasil laboratorium klinik. Berjalan sepenuhnya di browser; data tidak dikirim ke server.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; base-uri 'none'; form-action 'none'">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2310333a'/%3E%3Cpath d='M12 6h8v2h-1v7l4 8a2 2 0 0 1-2 3H11a2 2 0 0 1-2-3l4-8V8h-1z' fill='none' stroke='%235fd0c4' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#f2f5f3; --card:#fff; --ink:#16262c; --ink2:#4f636b; --ink3:#7b8d94;
+  --line:#d9e2de; --line2:#e9efec; --rail:#10333a; --rail2:#1a4a52; --railink:#cfe4e0;
+  --acc:#0b7a75; --accd:#08605c; --accbg:#e1f2ef;
+  --h:#a8500a; --hbg:#fcefd9; --l:#1b49c8; --lbg:#e2eafc; --crit:#b3191c; --critbg:#fde3e3;
+  --ok:#17794a; --okbg:#e0f2e7; --warn:#8a5a00; --warnbg:#fdf3d6;
+  --r:7px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font:14px/1.45 system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--paper);font-variant-numeric:tabular-nums}
+a{color:var(--accd);text-decoration:none}
+a:hover{text-decoration:underline}
+h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
+h1{font-size:20px} h2{font-size:15px} h3{font-size:14px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+.rail{background:var(--rail);color:var(--railink);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:16px 12px;gap:6px;overflow:auto}
+.brand{display:flex;gap:10px;align-items:center;padding:4px 6px 14px;border-bottom:1px solid var(--rail2);margin-bottom:8px}
+.brand img[src='']{display:none}
+.brand img{width:38px;height:38px;object-fit:contain;background:#fff;border-radius:8px;padding:2px}
+.brand b{display:block;color:#fff;font-size:13px;line-height:1.25}
+.brand span{font-size:11.5px;opacity:.8}
+.nav a{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;color:var(--railink);font-weight:500;border-left:3px solid transparent}
+.nav a:hover{background:var(--rail2);text-decoration:none}
+.nav a.on{background:var(--rail2);color:#fff;border-left-color:#5fd0c4}
+.nav .cta{margin:6px 0 10px;background:var(--acc);color:#fff;justify-content:center;font-weight:650;border-left:0;padding:10px}
+.nav .cta:hover{background:var(--accd)}
+.nav small{display:block;margin:12px 10px 2px;color:#8fb1ac;font-size:11.5px}
+.rail .foot{margin-top:auto;font-size:11.5px;color:#8fb1ac;padding:8px 6px 0;border-top:1px solid var(--rail2)}
+.main{min-width:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 24px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.top .who{display:flex;align-items:center;gap:10px}
+.pill{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--okbg);color:var(--ok);white-space:nowrap}
+.pill.warn{background:var(--warnbg);color:var(--warn)}
+.pill.bad{background:var(--critbg);color:var(--crit)}
+#view{padding:20px 24px 80px;max-width:1280px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.panel>h2{margin-bottom:12px}
+.panel.flat{padding:0}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.row.sp{justify-content:space-between}
+.grow{flex:1}
+.muted{color:var(--ink2)} .dim{color:var(--ink3)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:var(--r);padding:7px 13px;cursor:pointer;font-weight:550;white-space:nowrap}
+.btn:hover{border-color:#b9c8c3;text-decoration:none}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.pri:hover{background:var(--accd)}
+.btn.danger{color:var(--crit);border-color:#efc4c4}
+.btn.sm{padding:4px 9px;font-size:12.5px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.stat .n{font-size:30px;font-weight:700;line-height:1.1}
+.stat .lbl{color:var(--ink2);margin-top:2px}
+.stat.alert{border-color:#efb7b7;background:#fff7f7}
+.stat.alert .n{color:var(--crit)}
+.cols{display:grid;grid-template-columns:3fr 2fr;gap:16px}
+table{border-collapse:collapse;width:100%}
+th,td{padding:8px 10px;text-align:left;vertical-align:middle}
+thead th{font-weight:600;font-size:12.5px;color:var(--ink2);background:#f6f9f7;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td{border-bottom:1px solid var(--line2)}
+td a b,td>a:first-child{white-space:nowrap}
+tbody tr:hover{background:#fafcfb}
+td.num,th.num{text-align:right}
+.chip{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;background:#eef2f0;color:var(--ink2)}
+.chip.draft{background:#eceff1;color:#52626a}
+.chip.selesai{background:#e1ecfb;color:#1c4a9a}
+.chip.tervalidasi{background:var(--okbg);color:var(--ok)}
+.chip.grp{background:var(--accbg);color:var(--accd);font-weight:550}
+.fl{display:inline-block;min-width:26px;text-align:center;padding:1px 6px;border-radius:5px;font-size:12px;font-weight:700}
+.fl.H{background:var(--hbg);color:var(--h)} .fl.L{background:var(--lbg);color:var(--l)}
+.fl.CH,.fl.CL{background:var(--crit);color:#fff}
+.fl.A{background:var(--hbg);color:var(--h)}
+.empty{padding:34px 18px;text-align:center;color:var(--ink2)}
+.empty b{display:block;color:var(--ink);margin-bottom:4px}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px}
+.fld{display:flex;flex-direction:column;gap:3px;min-width:0}
+.fld>label{font-size:12.5px;color:var(--ink2);font-weight:550}
+input[type=text],input[type=date],input[type=number],input[type=search],input[type=password],select,textarea{border:1px solid var(--line);border-radius:var(--r);padding:7px 9px;background:#fff;min-height:34px;width:100%}
+textarea{resize:vertical}
+input:disabled,select:disabled{background:#f3f6f4;color:var(--ink3)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.gchip{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:99px;padding:6px 13px;cursor:pointer;background:#fff;font-weight:550;user-select:none}
+.gchip input{accent-color:var(--acc)}
+.gchip.on{border-color:var(--acc);background:var(--accbg);color:var(--accd)}
+.ptcard{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.ptcard .nm{font-size:16px;font-weight:650}
+.sugg{border:1px solid var(--line);border-radius:var(--r);margin-top:6px;max-height:260px;overflow:auto}
+.sugg button{display:flex;width:100%;justify-content:space-between;gap:10px;padding:8px 12px;border:0;border-bottom:1px solid var(--line2);background:#fff;cursor:pointer;text-align:left}
+.sugg button:hover{background:var(--accbg)}
+/* worksheet */
+.ws-head{display:flex;align-items:baseline;justify-content:space-between;padding:10px 14px;background:#f0f6f4;border-bottom:1px solid var(--line);border-top:1px solid var(--line)}
+.ws-head h3{font-size:14.5px}
+table.res td{padding:5px 10px}
+table.res td.nm{width:26%}
+table.res td.in{width:150px}
+table.res td.un{width:70px;color:var(--ink2);font-size:13px}
+table.res td.rf{color:var(--ink2);font-size:12.5px;min-width:170px}
+table.res td.gz{width:104px}
+table.res td.fk{width:112px}
+table.res tr.sub td{background:#fafcfb;font-style:italic;font-weight:600;color:var(--ink2);padding:4px 10px}
+table.res tr.hasv.fH{box-shadow:inset 3px 0 0 var(--h)}
+table.res tr.hasv.fL{box-shadow:inset 3px 0 0 var(--l)}
+table.res tr.hasv.fCH,table.res tr.hasv.fCL{box-shadow:inset 3px 0 0 var(--crit);background:#fffafa}
+table.res input.v{font-weight:650;min-height:30px;padding:4px 8px;text-align:right}
+table.res select{min-height:30px;padding:3px 6px}
+.cond{margin-top:4px;font-size:12.5px;min-height:28px;padding:2px 6px}
+.gauge{position:relative;display:block;width:92px;height:14px}
+.gauge::before{content:"";position:absolute;left:0;right:0;top:5px;height:4px;border-radius:2px;background:#e2e9e6}
+.gauge i{position:absolute;top:4px;height:6px;border-radius:2px;background:#a9d6cd}
+.gauge b{position:absolute;top:0;width:3px;height:14px;margin-left:-1.5px;border-radius:2px;background:var(--ink)}
+.gauge.H b{background:var(--h)} .gauge.L b{background:var(--l)} .gauge.CH b,.gauge.CL b{background:var(--crit);width:4px}
+.gauge.none{opacity:.0}
+.flagwrap{display:flex;gap:4px;align-items:center}
+.flagwrap select{width:70px}
+.savebar{position:sticky;bottom:0;background:rgba(255,255,255,.96);border-top:1px solid var(--line);margin:0 -24px;padding:12px 24px;display:flex;gap:10px;justify-content:flex-end;align-items:center;z-index:4}
+.savebar .grow{color:var(--ink2);font-size:13px}
+.banner{border:1px solid #ecd48a;background:var(--warnbg);color:var(--warn);border-radius:9px;padding:10px 14px;margin-bottom:14px;display:flex;gap:12px;justify-content:space-between;align-items:center}
+.banner.bad{border-color:#efb7b7;background:var(--critbg);color:var(--crit)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:-4px 0 14px;flex-wrap:wrap}
+.tabs a,.tabs button{padding:8px 13px;border:0;background:none;cursor:pointer;color:var(--ink2);font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs .on{color:var(--accd);border-bottom-color:var(--acc)}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:5px 14px}
+.kv dt{color:var(--ink2)} .kv dd{margin:0;font-weight:550}
+.bars{display:flex;flex-direction:column;gap:7px}
+.bars .b{display:grid;grid-template-columns:110px 1fr 34px;gap:8px;align-items:center}
+.bars .b i{display:block;height:12px;border-radius:3px;background:var(--acc)}
+.pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:10px 14px}
+/* modal & toast */
+.ov{position:fixed;inset:0;background:rgba(14,30,34,.5);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px;overflow:auto}
+.modal{background:#fff;border-radius:12px;width:min(560px,100%);box-shadow:0 18px 50px rgba(0,0,0,.28)}
+.modal.wide{width:min(1020px,100%)}
+.modal>header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.modal>.bd{padding:16px 18px;max-height:68vh;overflow:auto}
+.modal>footer{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end}
+.err{color:var(--crit);font-size:13px;margin-top:6px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:60;align-items:center}
+.toast-i{background:var(--ink);color:#fff;padding:9px 16px;border-radius:9px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.toast-i.bad{background:var(--crit)}
+.rng td{padding:3px 4px}.rng input,.rng select{min-height:30px;padding:3px 6px}
+.rng th{font-size:11.5px;padding:3px 4px}
+.mono{font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+.scroll-x{overflow-x:auto}
+.cols>div{min-width:0}
+.hamb{display:none}
+.scrim{display:none}
+.top h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.top .lft{display:flex;align-items:center;gap:10px;min-width:0}
+.panel.flat{overflow-x:auto;overflow-y:hidden}
+.about p{margin:0 0 10px;max-width:68ch}
+.about ul{margin:0 0 10px;padding-left:20px;max-width:68ch}
+.about li{margin-bottom:4px}
+.about dl{margin:0}
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .rail{position:fixed;left:0;top:0;bottom:0;height:auto;width:264px;z-index:40;transform:translateX(-102%);transition:transform .2s ease;box-shadow:none}
+  .rail.open{transform:none;box-shadow:6px 0 28px rgba(0,0,0,.3)}
+  .scrim.on{display:block;position:fixed;inset:0;background:rgba(14,30,34,.45);z-index:39}
+  .hamb{display:inline-flex}
+  .stats{grid-template-columns:repeat(2,1fr)}.cols{grid-template-columns:1fr}
+  .grid2,.grid3{grid-template-columns:1fr}
+  #view{padding:14px 14px 80px}.savebar{margin:0 -14px;padding:10px 14px;flex-wrap:wrap}
+  .top{padding:10px 14px;gap:8px}
+  .top h1{font-size:17px}
+}
+@media (max-width:700px){
+  input[type=text],input[type=date],input[type=number],input[type=search],input[type=password],select,textarea{font-size:16px}
+  .btn{min-height:40px}.btn.sm{min-height:34px}
+  .top{flex-wrap:wrap;position:static}
+  .top .who{width:100%}.top .who label{display:none}.top .who select{flex:1;min-width:0;width:100%!important}
+  .stat .n{font-size:26px}
+  .filters .fld{flex:1 1 140px}
+  .kv{grid-template-columns:120px 1fr}
+  .savebar .grow{flex-basis:100%}.savebar .btn{flex:1}
+  .ov{padding:2vh 8px}
+  .panel{padding:14px}
+  .panel.flat>table:not(.stack):not(.res){min-width:600px}
+  /* tabel daftar jadi kartu */
+  table.stack thead{display:none}
+  table.stack,table.stack tbody{display:block}
+  table.stack tr{display:block;padding:10px 14px;border-bottom:1px solid var(--line2)}
+  table.stack td{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:2px 0;border:0;text-align:right}
+  table.stack td::before{content:attr(data-label);color:var(--ink2);font-size:12.5px;text-align:left;flex:none}
+  table.stack td[data-label=""]::before{display:none}
+  table.stack td:first-child{font-size:15px}
+  table.stack td:last-child{justify-content:flex-end;padding-top:6px}
+  /* form hasil jadi kartu per parameter */
+  table.res thead{display:none}
+  table.res,table.res tbody{display:block}
+  table.res tr[data-tid]{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;grid-template-areas:"nm nm nm" "in in fk" "un rf rf";gap:4px 10px;padding:10px 14px;border-bottom:1px solid var(--line2)}
+  table.res tr[data-tid] td{padding:0;width:auto;min-width:0;border:0}
+  table.res td.nm{grid-area:nm;font-weight:600}
+  table.res td.in{grid-area:in}
+  table.res td.fk{grid-area:fk}
+  table.res td.un{grid-area:un;align-self:center}
+  table.res td.rf{grid-area:rf;min-width:0}
+  table.res td.gz{display:none}
+  table.res input.v{text-align:left;min-height:38px}
+  table.res select{min-height:38px}
+  table.res tr.sub{display:block}
+  table.res tr.sub td{display:block}
+  table.res tr[data-x]{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;padding:10px 14px;border-bottom:1px solid var(--line2)}
+  table.res tr[data-x] td{padding:0}
+  table.res tr[data-x] td:first-child{grid-column:1/-1}
+  table.res td[colspan]{display:block}
+  .sheetwrap{padding:0 0 20px}
+}
+/* ---------- lembar cetak ---------- */
+.sheetwrap{display:flex;justify-content:center;padding:6px 0 30px}
+.sheet{flex:none;background:#fff;width:210mm;min-height:297mm;padding:12mm;box-shadow:0 2px 18px rgba(0,0,0,.18);font:10pt/1.35 Arial,Helvetica,sans-serif;color:#000}
+.sheet .kop{display:grid;grid-template-columns:24mm 1fr 24mm;align-items:center;border-bottom:3px double #000;padding-bottom:2.5mm;margin-bottom:3mm}
+.sheet .kop img{width:22mm;height:22mm;object-fit:contain}
+.sheet .kop .tx{text-align:center}
+.sheet .kop .tx b{display:block;font-size:15pt;letter-spacing:.2px}
+.sheet .kop .tx span{display:block;font-size:8.5pt}
+.sheet h1.jd{font-size:12pt;text-align:center;margin:3mm 0 3mm;font-weight:700}
+.sheet .idn{display:grid;grid-template-columns:1fr 1fr;gap:0 8mm;margin-bottom:3mm}
+.sheet .idn .ln{display:grid;grid-template-columns:43mm 1fr;border-bottom:1px dotted #000;padding:.9mm 0;min-height:5.6mm}
+.sheet .idn .ln span{white-space:nowrap}
+.sheet .idn .ln b{font-weight:700;overflow-wrap:anywhere}
+.sheet table.t{border:1px solid #000;width:100%}
+.sheet table.t th{background:#d9d9d9;border:1px solid #000;color:#000;font-size:9.5pt;text-align:center;padding:1.4mm 1.6mm}
+.sheet table.t td{border:1px solid #000;border-top:0;border-bottom:1px solid #999;padding:.55mm 1.6mm;font-size:9.5pt;vertical-align:middle;line-height:1.25}
+.sheet table.t tr.g td{background:#f0f0f0;font-weight:700;border-bottom:1px solid #000}
+.sheet table.t tr.s td{font-style:italic;font-weight:700;padding-left:3mm}
+.sheet table.t td.c{text-align:center}
+.sheet table.t td.v{text-align:center;font-weight:400}
+.sheet table.t td.v.ab{font-weight:700}
+.sheet table.t td.rfc{text-align:center;font-size:8.5pt}
+.sheet table.t td.in1{padding-left:5mm}
+.sheet .ctt{border:1px solid #000;min-height:13mm;padding:1.5mm 2mm;margin-top:3mm;white-space:pre-wrap;font-size:9.5pt}
+.sheet .ket{font-size:8pt;font-style:italic;margin-top:1.5mm}
+.sheet .endblk{break-inside:avoid}
+.sheet .ttd{width:62mm;margin:4mm 0 0 auto;text-align:center;break-inside:avoid}
+.sheet .ttd .sp{height:17mm;display:flex;align-items:flex-end;justify-content:center}
+.sheet .ttd .sp img{max-height:20mm;max-width:50mm}
+.sheet .ttd b.nm{text-decoration:underline}
+.preview-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+@page{size:A4 portrait;margin:12mm 12mm 16mm;
+  @bottom-left{content:"Hasil hanya berlaku untuk sampel yang diperiksa.";font:8pt Arial,sans-serif;color:#222}
+  @bottom-right{content:"Halaman " counter(page);font:8pt Arial,sans-serif;color:#222}}
+@media print{
+  html,body{background:#fff}
+  .sheet{zoom:1!important}
+  .rail,.top,.preview-bar,#toast,.noprint{display:none!important}
+  .app{display:block}.main{display:block}
+  #view{padding:0;max-width:none}
+  .sheetwrap{padding:0;display:block}
+  .sheet{box-shadow:none;width:auto;min-height:0;padding:0}
+  .sheet table.t thead{display:table-header-group}
+  .sheet table.t tr{break-inside:avoid}
+  .sheet table.t tr.g,.sheet table.t tr.s{break-after:avoid}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail" id="rail">
+    <div class="brand"><img id="brandLogo" alt=""><div><b id="brandName">Hasil Laboratorium</b><span>Pencatatan dan cetak hasil</span></div></div>
+    <nav class="nav" id="nav">
+      <a class="cta" href="#/kunjungan/baru">Input hasil baru</a>
+      <a href="#/" data-nav="/">Ringkasan</a>
+      <a href="#/kunjungan" data-nav="/kunjungan">Kunjungan</a>
+      <a href="#/pasien" data-nav="/pasien">Pasien</a>
+      <small>Pengelolaan</small>
+      <a href="#/master" data-nav="/master">Master parameter</a>
+      <a href="#/riwayat" data-nav="/riwayat">Riwayat perubahan</a>
+      <a href="#/cadangan" data-nav="/cadangan">Cadangan data</a>
+      <a href="#/pengaturan" data-nav="/pengaturan">Pengaturan</a>
+      <a href="#/tentang" data-nav="/tentang">Tentang</a>
+    </nav>
+    <div class="foot">Data hanya tersimpan di browser ini dan tidak dikirim ke server. Buat cadangan berkala.<br><br>Alat bantu pencatatan, bukan perangkat medis. Verifikasi nilai rujukan sebelum dipakai.<br><br>Dibuat oleh <a href="#/tentang" style="color:#cfe4e0;text-decoration:underline">AbdiSR</a></div>
+  </aside>
+  <div class="main">
+    <header class="top">
+      <div class="lft"><button class="btn hamb" id="hamb" aria-label="Buka menu" aria-controls="rail" aria-expanded="false">Menu</button><h1 id="pageTitle">Ringkasan</h1></div>
+      <div class="who">
+        <span class="pill" id="storePill">Memuat…</span>
+        <label class="muted" for="userSel">Masuk sebagai</label>
+        <select id="userSel" style="width:auto;min-width:180px"></select>
+      </div>
+    </header>
+    <main id="view"></main>
+  </div>
+</div>
+<div class="scrim" id="scrim"></div>
+<div id="modalRoot"></div>
+<div id="toast" aria-live="polite"></div>
+
+<script>
+'use strict';
+const CATALOG = {"groups":[{"code":"hematologi","name":"Hematologi","title":"HEMATOLOGI","order":1},{"code":"kimia_klinik","name":"Kimia Klinik","title":"KIMIA KLINIK","order":2},{"code":"urinalisis","name":"Urinalisis","title":"URINALISIS","order":3},{"code":"imunoserologi","name":"Imunoserologi","title":"IMUNOSEROLOGI (TES CEPAT)","order":4},{"code":"lainnya","name":"Lainnya","title":"PEMERIKSAAN LAINNYA","order":5},{"code":"imunologi","name":"Imunologi","title":"IMUNOLOGI (Wondfo Finecare FIA Meter F113)","order":6},{"code":"elektrolit","name":"Elektrolit","title":"ELEKTROLIT (Erba EC 90)","order":7},{"code":"agd","name":"AGD","title":"ANALISA GAS DARAH / AGD (Wondfo BGA-102)","order":8}],"tests":[{"id":"hematologi_hemoglobin","group":"hematologi","sub":null,"name":"Hemoglobin","unit":"g/dL","ref":"L: 13.0 - 17.0 / P: 12.0 - 16.0","refShort":"L: 13.0 - 17.0 / P: 12.0 - 16.0","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":13.0,"hi":17.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":null,"lo":12.0,"hi":16.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":1,"active":true},{"id":"hematologi_hematokrit","group":"hematologi","sub":null,"name":"Hematokrit","unit":"%","ref":"L: 40 - 50 / P: 36 - 46","refShort":"L: 40 - 50 / P: 36 - 46","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":40.0,"hi":50.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":null,"lo":36.0,"hi":46.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":2,"active":true},{"id":"hematologi_leukosit","group":"hematologi","sub":null,"name":"Leukosit","unit":"/µL","ref":"4.000 - 10.000","refShort":"4.000 - 10.000","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":4000.0,"hi":10000.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":true,"order":3,"active":true},{"id":"hematologi_eritrosit","group":"hematologi","sub":null,"name":"Eritrosit","unit":"10^6/µL","ref":"L: 4.5 - 5.9 / P: 4.0 - 5.2","refShort":"L: 4.5 - 5.9 / P: 4.0 - 5.2","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":4.5,"hi":5.9,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":null,"lo":4.0,"hi":5.2,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":4,"active":true},{"id":"hematologi_trombosit","group":"hematologi","sub":null,"name":"Trombosit","unit":"/µL","ref":"150.000 - 400.000","refShort":"150.000 - 400.000","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":150000.0,"hi":400000.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":true,"order":5,"active":true},{"id":"hematologi_led","group":"hematologi","sub":null,"name":"LED","unit":"mm/jam","ref":"L: 0 - 15 / P: 0 - 20","refShort":"L: 0 - 15 / P: 0 - 20","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":0.0,"hi":15.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":null,"lo":0.0,"hi":20.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":6,"active":true},{"id":"hematologi_mcv","group":"hematologi","sub":"Indeks Eritrosit","name":"MCV","unit":"fL","ref":"80 - 100","refShort":"80 - 100","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":80.0,"hi":100.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":7,"active":true},{"id":"hematologi_mch","group":"hematologi","sub":"Indeks Eritrosit","name":"MCH","unit":"pg","ref":"27 - 33","refShort":"27 - 33","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":27.0,"hi":33.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":8,"active":true},{"id":"hematologi_mchc","group":"hematologi","sub":"Indeks Eritrosit","name":"MCHC","unit":"g/dL","ref":"32 - 36","refShort":"32 - 36","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":32.0,"hi":36.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":9,"active":true},{"id":"hematologi_basofil","group":"hematologi","sub":"Hitung Jenis Leukosit","name":"Basofil","unit":"%","ref":"0 - 1","refShort":"0 - 1","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.0,"hi":1.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":10,"active":true},{"id":"hematologi_eosinofil","group":"hematologi","sub":"Hitung Jenis Leukosit","name":"Eosinofil","unit":"%","ref":"1 - 3","refShort":"1 - 3","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":1.0,"hi":3.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":11,"active":true},{"id":"hematologi_neutrofil_batang","group":"hematologi","sub":"Hitung Jenis Leukosit","name":"Neutrofil Batang","unit":"%","ref":"2 - 6","refShort":"2 - 6","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":2.0,"hi":6.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":12,"active":true},{"id":"hematologi_neutrofil_segmen","group":"hematologi","sub":"Hitung Jenis Leukosit","name":"Neutrofil Segmen","unit":"%","ref":"50 - 70","refShort":"50 - 70","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":50.0,"hi":70.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":13,"active":true},{"id":"hematologi_limfosit","group":"hematologi","sub":"Hitung Jenis Leukosit","name":"Limfosit","unit":"%","ref":"20 - 40","refShort":"20 - 40","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":20.0,"hi":40.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":14,"active":true},{"id":"hematologi_monosit","group":"hematologi","sub":"Hitung Jenis Leukosit","name":"Monosit","unit":"%","ref":"2 - 8","refShort":"2 - 8","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":2.0,"hi":8.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":15,"active":true},{"id":"hematologi_bleeding_time_bt","group":"hematologi","sub":"Hemostasis","name":"Bleeding Time (BT)","unit":"menit","ref":"1 - 3","refShort":"1 - 3","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":1.0,"hi":3.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":16,"active":true},{"id":"hematologi_clotting_time_ct","group":"hematologi","sub":"Hemostasis","name":"Clotting Time (CT)","unit":"menit","ref":"5 - 15","refShort":"5 - 15","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":5.0,"hi":15.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":17,"active":true},{"id":"kimia_klinik_glukosa_puasa","group":"kimia_klinik","sub":null,"name":"Glukosa Puasa","unit":"mg/dL","ref":"70 - 100","refShort":"70 - 100","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":70.0,"hi":100.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":18,"active":true},{"id":"kimia_klinik_glukosa_2_jam_pp","group":"kimia_klinik","sub":null,"name":"Glukosa 2 Jam PP","unit":"mg/dL","ref":"< 140","refShort":"< 140","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":140.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":19,"active":true},{"id":"kimia_klinik_glukosa_sewaktu","group":"kimia_klinik","sub":null,"name":"Glukosa Sewaktu","unit":"mg/dL","ref":"< 200","refShort":"< 200","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":200.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":20,"active":true},{"id":"kimia_klinik_ureum","group":"kimia_klinik","sub":null,"name":"Ureum","unit":"mg/dL","ref":"10 - 50","refShort":"10 - 50","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":10.0,"hi":50.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":21,"active":true},{"id":"kimia_klinik_kreatinin","group":"kimia_klinik","sub":null,"name":"Kreatinin","unit":"mg/dL","ref":"L: 0.7 - 1.3 / P: 0.6 - 1.1","refShort":"L: 0.7 - 1.3 / P: 0.6 - 1.1","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":0.7,"hi":1.3,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":null,"lo":0.6,"hi":1.1,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":22,"active":true},{"id":"kimia_klinik_asam_urat","group":"kimia_klinik","sub":null,"name":"Asam Urat","unit":"mg/dL","ref":"L: 3.4 - 7.0 / P: 2.4 - 6.0","refShort":"L: 3.4 - 7.0 / P: 2.4 - 6.0","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":3.4,"hi":7.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":null,"lo":2.4,"hi":6.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":23,"active":true},{"id":"kimia_klinik_sgot_ast","group":"kimia_klinik","sub":null,"name":"SGOT (AST)","unit":"U/L","ref":"L: < 37 / P: < 31","refShort":"L: < 37 / P: < 31","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":37.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":31.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":24,"active":true},{"id":"kimia_klinik_sgpt_alt","group":"kimia_klinik","sub":null,"name":"SGPT (ALT)","unit":"U/L","ref":"L: < 42 / P: < 32","refShort":"L: < 42 / P: < 32","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":42.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":32.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":25,"active":true},{"id":"kimia_klinik_kolesterol_total","group":"kimia_klinik","sub":null,"name":"Kolesterol Total","unit":"mg/dL","ref":"< 200","refShort":"< 200","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":200.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":26,"active":true},{"id":"kimia_klinik_kolesterol_hdl","group":"kimia_klinik","sub":null,"name":"Kolesterol HDL","unit":"mg/dL","ref":"> 40","refShort":"> 40","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":40.0,"hi":null,"loIncl":false,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":27,"active":true},{"id":"kimia_klinik_kolesterol_ldl","group":"kimia_klinik","sub":null,"name":"Kolesterol LDL","unit":"mg/dL","ref":"< 100","refShort":"< 100","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":100.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":28,"active":true},{"id":"kimia_klinik_trigliserida","group":"kimia_klinik","sub":null,"name":"Trigliserida","unit":"mg/dL","ref":"< 150","refShort":"< 150","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":150.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":29,"active":true},{"id":"urinalisis_warna","group":"urinalisis","sub":"Makroskopis","name":"Warna","unit":"","ref":"Kuning","refShort":"Kuning","type":"combo","options":["Kuning muda","Kuning","Kuning tua","Merah","Cokelat","Jernih"],"normal":null,"ranges":[],"dec":0,"thousands":false,"order":30,"active":true},{"id":"urinalisis_kejernihan","group":"urinalisis","sub":"Makroskopis","name":"Kejernihan","unit":"","ref":"Jernih","refShort":"Jernih","type":"choice","options":["Jernih","Agak keruh","Keruh"],"normal":["Jernih"],"ranges":[],"dec":0,"thousands":false,"order":31,"active":true},{"id":"urinalisis_berat_jenis","group":"urinalisis","sub":"Kimia Urine","name":"Berat Jenis","unit":"","ref":"1.003 - 1.030","refShort":"1.003 - 1.030","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":1.003,"hi":1.03,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":3,"thousands":false,"order":32,"active":true},{"id":"urinalisis_ph","group":"urinalisis","sub":"Kimia Urine","name":"pH","unit":"","ref":"4.5 - 8.0","refShort":"4.5 - 8.0","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":4.5,"hi":8.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":33,"active":true},{"id":"urinalisis_protein","group":"urinalisis","sub":"Kimia Urine","name":"Protein","unit":"","ref":"Negatif","refShort":"Negatif","type":"choice","options":["Negatif","Trace","+1","+2","+3","+4"],"normal":["Negatif"],"ranges":[],"dec":0,"thousands":false,"order":34,"active":true},{"id":"urinalisis_glukosa","group":"urinalisis","sub":"Kimia Urine","name":"Glukosa","unit":"","ref":"Negatif","refShort":"Negatif","type":"choice","options":["Negatif","+1","+2","+3","+4"],"normal":["Negatif"],"ranges":[],"dec":0,"thousands":false,"order":35,"active":true},{"id":"urinalisis_keton","group":"urinalisis","sub":"Kimia Urine","name":"Keton","unit":"","ref":"Negatif","refShort":"Negatif","type":"choice","options":["Negatif","Trace","+1","+2","+3"],"normal":["Negatif"],"ranges":[],"dec":0,"thousands":false,"order":36,"active":true},{"id":"urinalisis_bilirubin","group":"urinalisis","sub":"Kimia Urine","name":"Bilirubin","unit":"","ref":"Negatif","refShort":"Negatif","type":"choice","options":["Negatif","+1","+2","+3"],"normal":["Negatif"],"ranges":[],"dec":0,"thousands":false,"order":37,"active":true},{"id":"urinalisis_urobilinogen","group":"urinalisis","sub":"Kimia Urine","name":"Urobilinogen","unit":"","ref":"Normal","refShort":"Normal","type":"choice","options":["Normal","+1","+2","+3"],"normal":["Normal"],"ranges":[],"dec":0,"thousands":false,"order":38,"active":true},{"id":"urinalisis_nitrit","group":"urinalisis","sub":"Kimia Urine","name":"Nitrit","unit":"","ref":"Negatif","refShort":"Negatif","type":"choice","options":["Negatif","Positif"],"normal":["Negatif"],"ranges":[],"dec":0,"thousands":false,"order":39,"active":true},{"id":"urinalisis_darah_eritrosit","group":"urinalisis","sub":"Kimia Urine","name":"Darah / Eritrosit","unit":"","ref":"Negatif","refShort":"Negatif","type":"choice","options":["Negatif","Trace","+1","+2","+3"],"normal":["Negatif"],"ranges":[],"dec":0,"thousands":false,"order":40,"active":true},{"id":"urinalisis_leukosit_esterase","group":"urinalisis","sub":"Kimia Urine","name":"Leukosit Esterase","unit":"","ref":"Negatif","refShort":"Negatif","type":"choice","options":["Negatif","Trace","+1","+2","+3"],"normal":["Negatif"],"ranges":[],"dec":0,"thousands":false,"order":41,"active":true},{"id":"urinalisis_eritrosit","group":"urinalisis","sub":"Sedimen Urine","name":"Eritrosit","unit":"/LPB","ref":"0 - 2","refShort":"0 - 2","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.0,"hi":2.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":42,"active":true},{"id":"urinalisis_leukosit","group":"urinalisis","sub":"Sedimen Urine","name":"Leukosit","unit":"/LPB","ref":"0 - 5","refShort":"0 - 5","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.0,"hi":5.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":43,"active":true},{"id":"urinalisis_sel_epitel","group":"urinalisis","sub":"Sedimen Urine","name":"Sel Epitel","unit":"/LPK","ref":"Negatif - (+)","refShort":"Negatif - (+)","type":"text","options":null,"normal":null,"ranges":[],"dec":0,"thousands":false,"order":44,"active":true},{"id":"urinalisis_silinder","group":"urinalisis","sub":"Sedimen Urine","name":"Silinder","unit":"/LPK","ref":"Negatif","refShort":"Negatif","type":"text","options":null,"normal":null,"ranges":[],"dec":0,"thousands":false,"order":45,"active":true},{"id":"urinalisis_kristal","group":"urinalisis","sub":"Sedimen Urine","name":"Kristal","unit":"/LPK","ref":"Negatif","refShort":"Negatif","type":"text","options":null,"normal":null,"ranges":[],"dec":0,"thousands":false,"order":46,"active":true},{"id":"imunoserologi_hbsag","group":"imunoserologi","sub":null,"name":"HBsAg","unit":"","ref":"Non-reaktif","refShort":"Non-reaktif","type":"choice","options":["Non-reaktif","Reaktif"],"normal":["Non-reaktif"],"ranges":[],"dec":0,"thousands":false,"order":47,"active":true},{"id":"imunoserologi_anti_hcv","group":"imunoserologi","sub":null,"name":"Anti-HCV","unit":"","ref":"Non-reaktif","refShort":"Non-reaktif","type":"choice","options":["Non-reaktif","Reaktif"],"normal":["Non-reaktif"],"ranges":[],"dec":0,"thousands":false,"order":48,"active":true},{"id":"imunoserologi_golongan_darah_abo","group":"imunoserologi","sub":null,"name":"Golongan Darah (ABO)","unit":"","ref":"-","refShort":"-","type":"choice","options":["A","B","AB","O"],"normal":null,"ranges":[],"dec":0,"thousands":false,"order":49,"active":true},{"id":"imunoserologi_rhesus","group":"imunoserologi","sub":null,"name":"Rhesus","unit":"","ref":"-","refShort":"-","type":"choice","options":["Positif","Negatif"],"normal":null,"ranges":[],"dec":0,"thousands":false,"order":50,"active":true},{"id":"imunologi_ctni","group":"imunologi","sub":"Penanda Jantung","name":"cTnI","unit":"ng/mL","ref":"0 - 0.3","refShort":"0 - 0.3","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.0,"hi":0.3,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":51,"active":true},{"id":"imunologi_ck_mb","group":"imunologi","sub":"Penanda Jantung","name":"CK-MB","unit":"ng/mL","ref":"0 - 5","refShort":"0 - 5","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.0,"hi":5.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":52,"active":true},{"id":"imunologi_myoglobin","group":"imunologi","sub":"Penanda Jantung","name":"Myoglobin","unit":"ng/mL","ref":"0 - 58","refShort":"0 - 58","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.0,"hi":58.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":53,"active":true},{"id":"imunologi_nt_probnp","group":"imunologi","sub":"Penanda Jantung","name":"NT-proBNP","unit":"pg/mL","ref":"< 75 th: 0 - 300\n≥ 75 th: 0 - 450","refShort":"< 75 th: 0-300; ≥ 75 th: 0-450","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":75,"cond":null,"lo":0.0,"hi":300.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":null,"ageMin":75,"ageMax":null,"cond":null,"lo":0.0,"hi":450.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":54,"active":true},{"id":"imunologi_crp","group":"imunologi","sub":"Inflamasi & Koagulasi","name":"CRP","unit":"mg/L","ref":"< 10","refShort":"< 10","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":10.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":55,"active":true},{"id":"imunologi_hscrp","group":"imunologi","sub":"Inflamasi & Koagulasi","name":"hsCRP","unit":"mg/L","ref":"0 - 1","refShort":"0 - 1","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.0,"hi":1.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":56,"active":true},{"id":"imunologi_prokalsitonin_pct","group":"imunologi","sub":"Inflamasi & Koagulasi","name":"Prokalsitonin (PCT)","unit":"ng/mL","ref":"< 0.5","refShort":"< 0.5","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":0.5,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":57,"active":true},{"id":"imunologi_il_6","group":"imunologi","sub":"Inflamasi & Koagulasi","name":"IL-6","unit":"pg/mL","ref":"≤ 10","refShort":"≤ 10","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":10.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":58,"active":true},{"id":"imunologi_d_dimer","group":"imunologi","sub":"Inflamasi & Koagulasi","name":"D-Dimer","unit":"mg/L","ref":"0 - 0.5","refShort":"0 - 0.5","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.0,"hi":0.5,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":59,"active":true},{"id":"imunologi_hba1c","group":"imunologi","sub":"Diabetes & Fungsi Ginjal","name":"HbA1c","unit":"%","ref":"4.0 - 6.5","refShort":"4.0 - 6.5","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":4.0,"hi":6.5,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":60,"active":true},{"id":"imunologi_mikroalbumin_urin_mau","group":"imunologi","sub":"Diabetes & Fungsi Ginjal","name":"Mikroalbumin Urin (MAU)","unit":"mg/L","ref":"0 - 20","refShort":"0 - 20","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.0,"hi":20.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":61,"active":true},{"id":"imunologi_cystatin_c","group":"imunologi","sub":"Diabetes & Fungsi Ginjal","name":"Cystatin C","unit":"mg/L","ref":"0.5 - 1.1","refShort":"0.5 - 1.1","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.5,"hi":1.1,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":62,"active":true},{"id":"imunologi_ngal","group":"imunologi","sub":"Diabetes & Fungsi Ginjal","name":"NGAL","unit":"ng/mL","ref":"≤ 131.7","refShort":"≤ 131.7","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":131.7,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":63,"active":true},{"id":"imunologi_2_mikroglobulin","group":"imunologi","sub":"Diabetes & Fungsi Ginjal","name":"β2-Mikroglobulin","unit":"mg/L","ref":"1.0 - 2.7","refShort":"1.0 - 2.7","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":1.0,"hi":2.7,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":64,"active":true},{"id":"imunologi_tsh","group":"imunologi","sub":"Fungsi Tiroid","name":"TSH","unit":"mIU/L","ref":"0.3 - 4.2","refShort":"0.3 - 4.2","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.3,"hi":4.2,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":65,"active":true},{"id":"imunologi_t3","group":"imunologi","sub":"Fungsi Tiroid","name":"T3","unit":"nmol/L","ref":"1.23 - 3.07","refShort":"1.23 - 3.07","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":1.23,"hi":3.07,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":2,"thousands":false,"order":66,"active":true},{"id":"imunologi_t4","group":"imunologi","sub":"Fungsi Tiroid","name":"T4","unit":"nmol/L","ref":"66 - 181","refShort":"66 - 181","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":66.0,"hi":181.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":67,"active":true},{"id":"imunologi_ft3","group":"imunologi","sub":"Fungsi Tiroid","name":"fT3","unit":"pmol/L","ref":"2.8 - 7.1","refShort":"2.8 - 7.1","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":2.8,"hi":7.1,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":68,"active":true},{"id":"imunologi_ft4","group":"imunologi","sub":"Fungsi Tiroid","name":"fT4","unit":"pmol/L","ref":"12 - 22","refShort":"12 - 22","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":12.0,"hi":22.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":69,"active":true},{"id":"imunologi_hcg","group":"imunologi","sub":"Hormon Reproduksi & Endokrin","name":"β-hCG","unit":"mIU/mL","ref":"< 5","refShort":"< 5","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":5.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":70,"active":true},{"id":"imunologi_lh","group":"imunologi","sub":"Hormon Reproduksi & Endokrin","name":"LH","unit":"mIU/mL","ref":"L: 1.70 - 8.60\nP: Folikuler 2.95 - 13.65\nOvulasi 13.65 - 95.75\nLuteal 1.25 - 11.00\nMenopause 8.24 - 55.23","refShort":"L: 1.70-8.60; P: sesuai fase siklus","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":1.7,"hi":8.6,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Folikuler","lo":2.95,"hi":13.65,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Ovulasi","lo":13.65,"hi":95.75,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Luteal","lo":1.25,"hi":11.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Menopause","lo":8.24,"hi":55.23,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":2,"thousands":false,"order":71,"active":true},{"id":"imunologi_fsh","group":"imunologi","sub":"Hormon Reproduksi & Endokrin","name":"FSH","unit":"mIU/mL","ref":"L: 1.50 - 12.40\nP: Folikuler 4.46 - 12.43\nOvulasi 4.88 - 20.96\nLuteal 1.96 - 7.70\nMenopause 22.70 - 130.00","refShort":"L: 1.50-12.40; P: sesuai fase siklus","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":1.5,"hi":12.4,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Folikuler","lo":4.46,"hi":12.43,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Ovulasi","lo":4.88,"hi":20.96,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Luteal","lo":1.96,"hi":7.7,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Menopause","lo":22.7,"hi":130.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":2,"thousands":false,"order":72,"active":true},{"id":"imunologi_estradiol_e2","group":"imunologi","sub":"Hormon Reproduksi & Endokrin","name":"Estradiol (E2)","unit":"pg/mL","ref":"L: < 85\nP: Folikuler 12 - 262\nOvulasi 40 - 396\nLuteal 21 - 381\nMenopause < 190","refShort":"L: < 85; P: sesuai fase siklus","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":85.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Folikuler","lo":12.0,"hi":262.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Ovulasi","lo":40.0,"hi":396.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Luteal","lo":21.0,"hi":381.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Menopause","lo":null,"hi":190.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":73,"active":true},{"id":"imunologi_progesteron","group":"imunologi","sub":"Hormon Reproduksi & Endokrin","name":"Progesteron","unit":"ng/mL","ref":"L: 0.2 - 1.5\nP: Folikuler 0.2 - 2.0\nOvulasi 0.7 - 3.5\nLuteal 3.0 - 30\nMenopause 0.1 - 0.9","refShort":"L: 0.2-1.5; P: sesuai fase siklus","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":0.2,"hi":1.5,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Folikuler","lo":0.2,"hi":2.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Ovulasi","lo":0.7,"hi":3.5,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Luteal","lo":3.0,"hi":30.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":"Menopause","lo":0.1,"hi":0.9,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":74,"active":true},{"id":"imunologi_prolaktin_prl","group":"imunologi","sub":"Hormon Reproduksi & Endokrin","name":"Prolaktin (PRL)","unit":"ng/mL","ref":"P (tidak hamil): 4.60 - 25.07\nL: 3.45 - 17.42","refShort":"P: 4.60-25.07; L: 3.45-17.42","type":"num","options":null,"normal":null,"ranges":[{"sex":"P","ageMin":null,"ageMax":null,"cond":"tidak hamil","lo":4.6,"hi":25.07,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":3.45,"hi":17.42,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":2,"thousands":false,"order":75,"active":true},{"id":"imunologi_testosteron","group":"imunologi","sub":"Hormon Reproduksi & Endokrin","name":"Testosteron","unit":"ng/mL","ref":"L 20-49 th: 1.61 - 8.41\nL ≥ 50 th: < 0.61\nP 20-49 th: ≤ 0.80\nP ≥ 50 th: < 0.71","refShort":"L: 1.61-8.41 (<50 th); P: ≤ 0.80","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":20,"ageMax":50,"cond":null,"lo":1.61,"hi":8.41,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"L","ageMin":50,"ageMax":null,"cond":null,"lo":null,"hi":0.61,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null},{"sex":"P","ageMin":20,"ageMax":50,"cond":null,"lo":null,"hi":0.8,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":50,"ageMax":null,"cond":null,"lo":null,"hi":0.71,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":2,"thousands":false,"order":76,"active":true},{"id":"imunologi_amh","group":"imunologi","sub":"Hormon Reproduksi & Endokrin","name":"AMH","unit":"ng/mL","ref":"L 20-60 th: 0.92 - 13.89\nP 20-29 th: 0.88 - 10.35\nP 30-39 th: 0.31 - 7.86\nP 40-50 th: ≤ 5.07","refShort":"sesuai usia dan jenis kelamin","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":20,"ageMax":61,"cond":null,"lo":0.92,"hi":13.89,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":20,"ageMax":30,"cond":null,"lo":0.88,"hi":10.35,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":30,"ageMax":40,"cond":null,"lo":0.31,"hi":7.86,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":40,"ageMax":51,"cond":null,"lo":null,"hi":5.07,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":2,"thousands":false,"order":77,"active":true},{"id":"imunologi_kortisol","group":"imunologi","sub":"Hormon Reproduksi & Endokrin","name":"Kortisol","unit":"nmol/L","ref":"Pagi (07-10): 201.31 - 536.54\nSore (16-20): 65.78 - 330.85","refShort":"Pagi: 201-537; Sore: 66-331","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":"Pagi (07-10)","lo":201.31,"hi":536.54,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":null,"ageMin":null,"ageMax":null,"cond":"Sore (16-20)","lo":65.78,"hi":330.85,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":2,"thousands":false,"order":78,"active":true},{"id":"imunologi_afp","group":"imunologi","sub":"Penanda Tumor","name":"AFP","unit":"ng/mL","ref":"0 - 20","refShort":"0 - 20","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.0,"hi":20.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":79,"active":true},{"id":"imunologi_cea","group":"imunologi","sub":"Penanda Tumor","name":"CEA","unit":"ng/mL","ref":"0 - 5","refShort":"0 - 5","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.0,"hi":5.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":80,"active":true},{"id":"imunologi_psa_total","group":"imunologi","sub":"Penanda Tumor","name":"PSA Total","unit":"ng/mL","ref":"0 - 4","refShort":"0 - 4","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.0,"hi":4.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":81,"active":true},{"id":"imunologi_free_psa_fpsa","group":"imunologi","sub":"Penanda Tumor","name":"Free PSA (fPSA)","unit":"ng/mL","ref":"< 1","refShort":"< 1","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":1.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":82,"active":true},{"id":"imunologi_vitamin_d_25_oh","group":"imunologi","sub":"Lain-lain","name":"Vitamin D (25-OH)","unit":"ng/mL","ref":"30 - 100","refShort":"30 - 100","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":30.0,"hi":100.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":83,"active":true},{"id":"imunologi_lp_pla2","group":"imunologi","sub":"Lain-lain","name":"Lp-PLA2","unit":"ng/mL","ref":"< 225","refShort":"< 225","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":225.0,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":84,"active":true},{"id":"imunologi_s100","group":"imunologi","sub":"Lain-lain","name":"S100β","unit":"ng/mL","ref":"< 0.2","refShort":"< 0.2","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":null,"hi":0.2,"loIncl":true,"hiIncl":false,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":85,"active":true},{"id":"elektrolit_natrium_na","group":"elektrolit","sub":null,"name":"Natrium (Na+)","unit":"mmol/L","ref":"135 - 145","refShort":"135 - 145","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":135.0,"hi":145.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":86,"active":true},{"id":"elektrolit_kalium_k","group":"elektrolit","sub":null,"name":"Kalium (K+)","unit":"mmol/L","ref":"3.5 - 5.0","refShort":"3.5 - 5.0","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":3.5,"hi":5.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":87,"active":true},{"id":"elektrolit_klorida_cl","group":"elektrolit","sub":null,"name":"Klorida (Cl-)","unit":"mmol/L","ref":"98 - 107","refShort":"98 - 107","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":98.0,"hi":107.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":88,"active":true},{"id":"elektrolit_kalsium_ion_ca2","group":"elektrolit","sub":null,"name":"Kalsium Ion (Ca2+)","unit":"mmol/L","ref":"1.12 - 1.32","refShort":"1.12 - 1.32","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":1.12,"hi":1.32,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":2,"thousands":false,"order":89,"active":true},{"id":"agd_jenis_sampel","group":"agd","sub":"Data Sampel","name":"Jenis Sampel","unit":"","ref":"Arteri / Vena / Kapiler","refShort":"Arteri / Vena / Kapiler","type":"choice","options":["Arteri","Vena","Kapiler"],"normal":null,"ranges":[],"dec":0,"thousands":false,"order":90,"active":true},{"id":"agd_fio2","group":"agd","sub":"Data Sampel","name":"FiO2","unit":"%","ref":"21 (udara ruangan)","refShort":"21 (udara ruangan)","type":"num","options":null,"normal":null,"ranges":[],"dec":0,"thousands":false,"order":91,"active":true},{"id":"agd_suhu_pasien","group":"agd","sub":"Data Sampel","name":"Suhu Pasien","unit":"°C","ref":"-","refShort":"-","type":"num","options":null,"normal":null,"ranges":[],"dec":0,"thousands":false,"order":92,"active":true},{"id":"agd_ph","group":"agd","sub":"Gas Darah","name":"pH","unit":"","ref":"7.35 - 7.45","refShort":"7.35 - 7.45","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":7.35,"hi":7.45,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":2,"thousands":false,"order":93,"active":true},{"id":"agd_pco2","group":"agd","sub":"Gas Darah","name":"pCO2","unit":"mmHg","ref":"35 - 45","refShort":"35 - 45","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":35.0,"hi":45.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":94,"active":true},{"id":"agd_po2","group":"agd","sub":"Gas Darah","name":"pO2","unit":"mmHg","ref":"80 - 100","refShort":"80 - 100","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":80.0,"hi":100.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":95,"active":true},{"id":"agd_na","group":"agd","sub":"Elektrolit","name":"Na+","unit":"mmol/L","ref":"135 - 145","refShort":"135 - 145","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":135.0,"hi":145.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":96,"active":true},{"id":"agd_k","group":"agd","sub":"Elektrolit","name":"K+","unit":"mmol/L","ref":"3.5 - 5.0","refShort":"3.5 - 5.0","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":3.5,"hi":5.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":97,"active":true},{"id":"agd_cl","group":"agd","sub":"Elektrolit","name":"Cl-","unit":"mmol/L","ref":"98 - 107","refShort":"98 - 107","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":98.0,"hi":107.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":98,"active":true},{"id":"agd_ca2","group":"agd","sub":"Elektrolit","name":"Ca2+","unit":"mmol/L","ref":"1.12 - 1.32","refShort":"1.12 - 1.32","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":1.12,"hi":1.32,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":2,"thousands":false,"order":99,"active":true},{"id":"agd_glukosa_glu","group":"agd","sub":"Metabolit & Hematokrit","name":"Glukosa (Glu)","unit":"mg/dL","ref":"70 - 100","refShort":"70 - 100","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":70.0,"hi":100.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":100,"active":true},{"id":"agd_laktat_lac","group":"agd","sub":"Metabolit & Hematokrit","name":"Laktat (Lac)","unit":"mmol/L","ref":"0.5 - 2.0","refShort":"0.5 - 2.0","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":0.5,"hi":2.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":101,"active":true},{"id":"agd_hematokrit_hct","group":"agd","sub":"Metabolit & Hematokrit","name":"Hematokrit (Hct)","unit":"%","ref":"L: 40 - 50 / P: 36 - 46","refShort":"L: 40 - 50 / P: 36 - 46","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":40.0,"hi":50.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":null,"lo":36.0,"hi":46.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":102,"active":true},{"id":"agd_ch","group":"agd","sub":"Parameter Terhitung","name":"cH+","unit":"nmol/L","ref":"35 - 45","refShort":"35 - 45","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":35.0,"hi":45.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":103,"active":true},{"id":"agd_hco3_aktual","group":"agd","sub":"Parameter Terhitung","name":"HCO3- (aktual)","unit":"mmol/L","ref":"22 - 26","refShort":"22 - 26","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":22.0,"hi":26.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":104,"active":true},{"id":"agd_hco3_standar","group":"agd","sub":"Parameter Terhitung","name":"HCO3- (standar)","unit":"mmol/L","ref":"22 - 26","refShort":"22 - 26","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":22.0,"hi":26.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":105,"active":true},{"id":"agd_be_b","group":"agd","sub":"Parameter Terhitung","name":"BE (B)","unit":"mmol/L","ref":"-2.0 - +2.0","refShort":"-2.0 - +2.0","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":-2.0,"hi":2.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":106,"active":true},{"id":"agd_be_ecf","group":"agd","sub":"Parameter Terhitung","name":"BE (ecf)","unit":"mmol/L","ref":"-2.0 - +2.0","refShort":"-2.0 - +2.0","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":-2.0,"hi":2.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":107,"active":true},{"id":"agd_ctco2","group":"agd","sub":"Parameter Terhitung","name":"ctCO2","unit":"mmol/L","ref":"23 - 27","refShort":"23 - 27","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":23.0,"hi":27.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":108,"active":true},{"id":"agd_anion_gap_angap","group":"agd","sub":"Parameter Terhitung","name":"Anion Gap (AnGap)","unit":"mmol/L","ref":"8 - 16","refShort":"8 - 16","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":8.0,"hi":16.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":109,"active":true},{"id":"agd_so2_est","group":"agd","sub":"Parameter Terhitung","name":"sO2 (est)","unit":"%","ref":"95 - 100","refShort":"95 - 100","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":95.0,"hi":100.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":110,"active":true},{"id":"agd_thb_est","group":"agd","sub":"Parameter Terhitung","name":"tHb (est)","unit":"g/dL","ref":"L: 13.0 - 17.0 / P: 12.0 - 16.0","refShort":"L: 13.0 - 17.0 / P: 12.0 - 16.0","type":"num","options":null,"normal":null,"ranges":[{"sex":"L","ageMin":null,"ageMax":null,"cond":null,"lo":13.0,"hi":17.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null},{"sex":"P","ageMin":null,"ageMax":null,"cond":null,"lo":12.0,"hi":16.0,"loIncl":true,"hiIncl":true,"critLo":null,"critHi":null}],"dec":1,"thousands":false,"order":111,"active":true},{"id":"agd_po2_fio2","group":"agd","sub":"Parameter Terhitung","name":"pO2 / FiO2","unit":"mmHg","ref":"> 300","refShort":"> 300","type":"num","options":null,"normal":null,"ranges":[{"sex":null,"ageMin":null,"ageMax":null,"cond":null,"lo":300.0,"hi":null,"loIncl":false,"hiIncl":true,"critLo":null,"critHi":null}],"dec":0,"thousands":false,"order":112,"active":true}]};
+const GROUP_ORDER = ['hematologi','kimia_klinik','urinalisis','imunoserologi','imunologi','elektrolit','agd','lainnya'];
+const APP_VERSION = '1.0.0';
+const ROLE_LABEL = {admin:'Admin', penanggung_jawab:'Penanggung jawab', analis:'Analis', viewer:'Viewer'};
+const STATUS_LABEL = {draft:'Draft', selesai:'Selesai', tervalidasi:'Tervalidasi'};
+const SEX_LABEL = {L:'Laki-laki', P:'Perempuan'};
+
+/* ============ util ============ */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
+const isoDate = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today = () => isoDate(new Date());
+const parseISO = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const fmtDate = iso => iso ? iso.split('-').reverse().join('/') : '';
+const fmtDT = ts => { const d = new Date(ts); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const addDays = (iso, n) => { const d = parseISO(iso); d.setDate(d.getDate()+n); return isoDate(d); };
+function ageYears(dob, ref){
+  if(!dob) return null;
+  const a = parseISO(dob), b = parseISO(ref || today());
+  let y = b.getFullYear() - a.getFullYear();
+  const m = b.getMonth() - a.getMonth();
+  if(m < 0 || (m === 0 && b.getDate() < a.getDate())) y--;
+  return y;
+}
+function ageText(dob, ref){
+  const y = ageYears(dob, ref);
+  if(y == null) return '';
+  if(y >= 2) return y + ' th';
+  const a = parseISO(dob), b = parseISO(ref || today());
+  let mo = (b.getFullYear()-a.getFullYear())*12 + b.getMonth() - a.getMonth();
+  if(b.getDate() < a.getDate()) mo--;
+  return Math.max(mo,0) + ' bln';
+}
+const clone = o => JSON.parse(JSON.stringify(o));
+function toast(msg, bad){
+  const el = document.createElement('div');
+  el.className = 'toast-i' + (bad ? ' bad' : ''); el.textContent = msg;
+  $('#toast').appendChild(el);
+  setTimeout(() => el.remove(), bad ? 5200 : 2600);
+}
+function download(name, text, type){
+  const blob = new Blob([text], {type: type || 'application/octet-stream'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+/* ============ state & persistence ============ */
+const DB = 'lab-hasil-app', STORE = 'kv', KEY = 'state';
+let S = null, storeMode = 'idb', saveTimer = null;
+function idb(){
+  return new Promise((res, rej) => {
+    const rq = indexedDB.open(DB, 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore(STORE);
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  });
+}
+async function idbGet(){
+  const db = await idb();
+  return new Promise((res, rej) => { const r = db.transaction(STORE).objectStore(STORE).get(KEY); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+}
+async function idbSet(v){
+  const db = await idb();
+  return new Promise((res, rej) => { const t = db.transaction(STORE, 'readwrite'); t.objectStore(STORE).put(v, KEY); t.oncomplete = () => res(); t.onerror = () => rej(t.error); });
+}
+function fresh(){
+  return {
+    v: 1,
+    settings: {
+      nama: '', alamat: '', telp: '', email: '', unit: 'Laboratorium',
+      logo: '', pj_nama: '', pj_sip: '', ttd: '', kota: ''
+    },
+    users: [{id:'u1', name:'Admin', role:'admin'}, {id:'u2', name:'Penanggung jawab', role:'penanggung_jawab'}, {id:'u3', name:'Analis', role:'analis'}],
+    groups: clone(CATALOG.groups), tests: clone(CATALOG.tests), refVerified: false,
+    patients: [], visits: [], audit: [], seq: {}, nextId: 1, lastBackup: null, onboarded: false
+  };
+}
+async function load(){
+  let data = null;
+  try { data = await idbGet(); } catch(e) { storeMode = 'ls'; }
+  if(!data){ try { const t = localStorage.getItem('lab-hasil-state'); if(t) data = JSON.parse(t); } catch(e){} }
+  S = data || fresh();
+  try { if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
+  setPill();
+}
+function save(now){
+  clearTimeout(saveTimer);
+  if(now) return doSave();
+  saveTimer = setTimeout(doSave, 120);
+}
+async function doSave(){
+  try { await idbSet(S); storeMode = 'idb'; }
+  catch(e){
+    try { localStorage.setItem('lab-hasil-state', JSON.stringify(S)); storeMode = 'ls'; }
+    catch(e2){ storeMode = 'fail'; }
+  }
+  setPill();
+}
+function setPill(){
+  const p = $('#storePill'); if(!p) return;
+  p.className = 'pill' + (storeMode === 'ls' ? ' warn' : storeMode === 'fail' ? ' bad' : '');
+  p.textContent = storeMode === 'idb' ? 'Tersimpan di browser ini' : storeMode === 'ls' ? 'Tersimpan (mode terbatas)' : 'Gagal menyimpan. Ekspor cadangan sekarang';
+}
+const uid = p => p + (S.nextId++);
+const settings = () => S.settings;
+
+/* ============ users, roles ============ */
+function curUser(){
+  let id = null; try { id = localStorage.getItem('lab-hasil-user'); } catch(e){}
+  return S.users.find(u => u.id === id) || S.users[0];
+}
+function setUser(id){ try { localStorage.setItem('lab-hasil-user', id); } catch(e){} }
+const role = () => curUser().role;
+function can(what){
+  const r = role();
+  switch(what){
+    case 'edit': return ['admin','penanggung_jawab','analis'].includes(r);
+    case 'validate': case 'editLocked': return ['admin','penanggung_jawab'].includes(r);
+    case 'delete': case 'master': case 'settings': return r === 'admin';
+    default: return false;
+  }
+}
+function audit(aksi, entitas, ref, detail, alasan){
+  const u = curUser();
+  S.audit.unshift({t: Date.now(), user: u.name, role: u.role, aksi, entitas, ref: ref || '', detail: detail || [], alasan: alasan || ''});
+  if(S.audit.length > 5000) S.audit.length = 5000;
+}
+
+/* ============ katalog helpers ============ */
+const testById = id => S.tests.find(t => t.id === id);
+const groupByCode = c => S.groups.find(g => g.code === c);
+const groupsSorted = () => [...S.groups].sort((a,b) => GROUP_ORDER.indexOf(a.code) - GROUP_ORDER.indexOf(b.code));
+const gRank = c => { const i = GROUP_ORDER.indexOf(c); return i < 0 ? 99 : i; };
+const patientById = id => S.patients.find(p => p.id === id);
+const visitById = id => S.visits.find(v => v.id === id);
+const activeVisits = () => S.visits.filter(v => !v.deleted);
+
+function parseNum(str, thousands){
+  let s = String(str ?? '').trim().replace(/\s/g, '');
+  if(!s) return NaN;
+  if(thousands){ s = s.replace(/\./g, '').replace(',', '.'); }
+  else { s = s.replace(',', '.'); }
+  if(!/^[+-]?\d*\.?\d+$/.test(s)) return NaN;
+  return Number(s);
+}
+function normVal(t, str){
+  // simpan sebagai teks yang rapi: koma jadi titik, tanpa titik ribuan untuk satuan /µL
+  const s = String(str ?? '').trim();
+  if(t.type !== 'num') return s;
+  const n = parseNum(s, t.thousands);
+  if(isNaN(n)) return s;
+  return t.thousands ? String(n) : s.replace(',', '.');
+}
+function fmtVal(t, v){
+  if(v === '' || v == null) return '';
+  if(t && t.type === 'num' && (t.thousands || t.unit === '/µL')){
+    const n = parseNum(v, true);
+    if(!isNaN(n)) return n.toLocaleString('id-ID');
+  }
+  return v;
+}
+function fmtN(n, t){
+  if(t.thousands) return Number(n).toLocaleString('id-ID');
+  if(t.dec > 0) return Number(n).toFixed(t.dec);
+  return String(n);
+}
+function condsOf(t, sex){
+  const s = new Set();
+  (t.ranges || []).forEach(r => { if(r.cond && (!sex || !r.sex || r.sex === sex)) s.add(r.cond); });
+  return [...s];
+}
+function pickRange(t, sex, ageY, cond){
+  let c = (t.ranges || []).filter(r =>
+    (!r.sex || !sex || r.sex === sex) &&
+    (r.ageMin == null || ageY == null || ageY >= r.ageMin) &&
+    (r.ageMax == null || ageY == null || ageY < r.ageMax));
+  if(!c.length) return null;
+  if(cond){ c = c.filter(r => !r.cond || r.cond === cond); }
+  else {
+    const conds = new Set(c.map(r => r.cond).filter(Boolean));
+    if(conds.size > 1) return null;
+  }
+  return c.length === 1 ? c[0] : null;
+}
+function evalResult(t, val, cond, sex, ageY){
+  val = String(val ?? '').trim();
+  if(!val) return {flag:'', abn:false, range:null};
+  if(t.type === 'num'){
+    const v = parseNum(val, t.thousands);
+    if(isNaN(v)) return {flag:'', abn:false, range:null};
+    const r = pickRange(t, sex, ageY, cond);
+    if(!r) return {flag:'', abn:false, range:null};
+    let f = '';
+    if(r.critHi != null && v >= r.critHi) f = 'CH';
+    else if(r.critLo != null && v <= r.critLo) f = 'CL';
+    else if(r.hi != null && (r.hiIncl ? v > r.hi : v >= r.hi)) f = 'H';
+    else if(r.lo != null && (r.loIncl ? v < r.lo : v <= r.lo)) f = 'L';
+    return {flag: f, abn: false, range: r, v};
+  }
+  if(t.normal && t.normal.length) return {flag:'', abn: !t.normal.includes(val), range:null};
+  return {flag:'', abn:false, range:null};
+}
+function gaugeOf(r, v){
+  if(!r || v == null || isNaN(v)) return null;
+  let min, max, z0, z1;
+  if(r.lo != null && r.hi != null && r.hi > r.lo){
+    const p = (r.hi - r.lo) / 2; min = r.lo - p; max = r.hi + p; z0 = 1/3; z1 = 2/3;
+  } else if(r.hi != null && r.lo == null && r.hi > 0){
+    min = 0; max = r.hi * 1.5; z0 = 0; z1 = 2/3;
+  } else if(r.lo != null && r.hi == null && r.lo > 0){
+    min = 0; max = r.lo * 2; z0 = .5; z1 = 1;
+  } else return null;
+  const pos = Math.min(1, Math.max(0, (v - min) / (max - min)));
+  return {pos, z0, z1};
+}
+function gaugeHTML(g, flag){
+  if(!g) return '<span class="gauge none"></span>';
+  return `<span class="gauge ${flag||''}" title="Posisi nilai terhadap rentang rujukan"><i style="left:${(g.z0*100).toFixed(1)}%;width:${((g.z1-g.z0)*100).toFixed(1)}%"></i><b style="left:${(g.pos*100).toFixed(1)}%"></b></span>`;
+}
+function genRefText(t){
+  const rs = t.ranges || [];
+  if(!rs.length) return {full: t.ref || '', short: t.refShort || ''};
+  const expr = r => {
+    if(r.lo != null && r.hi != null) return `${fmtN(r.lo,t)} - ${fmtN(r.hi,t)}`;
+    if(r.hi != null) return `${r.hiIncl ? '≤' : '<'} ${fmtN(r.hi,t)}`;
+    if(r.lo != null) return `${r.loIncl ? '≥' : '>'} ${fmtN(r.lo,t)}`;
+    return '';
+  };
+  const simple = rs.every(r => !r.cond && r.ageMin == null && r.ageMax == null);
+  let full;
+  if(rs.length === 1 && !rs[0].sex && simple) full = expr(rs[0]);
+  else if(simple && rs.length === 2 && rs.every(r => r.sex)) full = rs.map(r => `${r.sex}: ${expr(r)}`).join(' / ');
+  else full = rs.map(r => {
+    let a = '';
+    if(r.ageMin != null && r.ageMax != null) a = `${r.ageMin}-${r.ageMax-1} th`;
+    else if(r.ageMin != null) a = `≥ ${r.ageMin} th`;
+    else if(r.ageMax != null) a = `< ${r.ageMax} th`;
+    const lab = [r.sex, a, r.cond].filter(Boolean).join(' ');
+    return lab ? `${lab}: ${expr(r)}` : expr(r);
+  }).join('\n');
+  return {full, short: full.replace(/\n/g, '; ')};
+}
+
+/* ============ visits & results ============ */
+function snapshotOf(t){
+  return {name: t.name, unit: t.unit, ref: t.ref, refShort: t.refShort || t.ref, group: t.group, sub: t.sub || null, order: t.order, type: t.type};
+}
+function visitFlags(v){
+  const s = new Set();
+  Object.values(v.results || {}).forEach(r => { if(r.flag) s.add(r.flag); if(r.abn) s.add('A'); });
+  return s;
+}
+const hasCrit = v => { const f = visitFlags(v); return f.has('CH') || f.has('CL'); };
+const hasAbn = v => { const f = visitFlags(v); return f.has('H') || f.has('L') || f.has('CH') || f.has('CL') || f.has('A'); };
+function resultList(v){
+  return Object.entries(v.results || {}).map(([id, r]) => ({id, ...r}))
+    .sort((a,b) => gRank(a.group) - gRank(b.group) || (a.order||0) - (b.order||0));
+}
+function nextLabNo(){
+  const d = new Date();
+  const k = String(d.getFullYear()).slice(2) + pad(d.getMonth()+1) + pad(d.getDate());
+  S.seq[k] = (S.seq[k] || 0) + 1;
+  return `LAB-${k}-${String(S.seq[k]).padStart(4,'0')}`;
+}
+function diffResults(a, b){
+  const out = [], ids = new Set([...Object.keys(a || {}), ...Object.keys(b || {})]);
+  for(const id of ids){
+    const x = a?.[id], y = b?.[id], nm = (y || x).name;
+    const f = r => r.val + (r.flag ? ` [${r.flag}]` : '');
+    if(!x) out.push(`+ ${nm} = ${f(y)}`);
+    else if(!y) out.push(`− ${nm} dihapus (sebelumnya ${f(x)})`);
+    else if(x.val !== y.val || x.flag !== y.flag) out.push(`${nm}: ${f(x)} → ${f(y)}`);
+  }
+  return out;
+}
+
+/* ============ modal ============ */
+function openModal({title, body, actions = [], wide, onMount}){
+  const root = $('#modalRoot');
+  const ov = document.createElement('div');
+  ov.className = 'ov';
+  ov.innerHTML = `<div class="modal ${wide?'wide':''}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+    <header><h2>${esc(title)}</h2><button class="btn sm" data-x="close" aria-label="Tutup">Tutup</button></header>
+    <div class="bd">${body}</div>
+    <footer></footer></div>`;
+  root.appendChild(ov);
+  const close = () => { ov.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if(e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
+  ov.addEventListener('mousedown', e => { if(e.target === ov) close(); });
+  $('[data-x=close]', ov).onclick = close;
+  const foot = $('footer', ov);
+  actions.forEach(a => {
+    const b = document.createElement('button');
+    b.className = 'btn ' + (a.cls || ''); b.textContent = a.label;
+    b.onclick = async () => { const r = await a.run?.(ov, close); if(r !== false && a.close !== false) close(); };
+    foot.appendChild(b);
+  });
+  if(onMount) onMount(ov, close);
+  const first = $('input,select,textarea', ov); if(first) first.focus();
+  return {ov, close};
+}
+function confirmBox(msg, label = 'Lanjutkan', danger){
+  return new Promise(res => {
+    let done = false;
+    const m = openModal({title: 'Konfirmasi', body: `<p style="margin:0">${esc(msg)}</p>`, actions: [
+      {label: 'Batal', run: () => { done = true; res(false); }},
+      {label, cls: danger ? 'danger' : 'pri', run: () => { done = true; res(true); }}
+    ]});
+    const obs = new MutationObserver(() => { if(!document.body.contains(m.ov) && !done){ done = true; res(false); obs.disconnect(); } });
+    obs.observe($('#modalRoot'), {childList: true});
+  });
+}
+function askReason(title, desc){
+  return new Promise(res => {
+    let done = false;
+    const m = openModal({title, body: `<p class="muted" style="margin-top:0">${esc(desc)}</p><div class="fld"><label for="rsn">Alasan</label><textarea id="rsn" rows="3"></textarea></div><div class="err" id="rsnErr"></div>`, actions: [
+      {label: 'Batal', run: () => { done = true; res(null); }},
+      {label: 'Simpan', cls: 'pri', close: false, run: (ov, close) => {
+        const v = $('#rsn', ov).value.trim();
+        if(v.length < 3){ $('#rsnErr', ov).textContent = 'Tulis alasan singkat (minimal 3 huruf).'; return false; }
+        done = true; res(v); close(); return false;
+      }}
+    ]});
+    const obs = new MutationObserver(() => { if(!document.body.contains(m.ov) && !done){ done = true; res(null); obs.disconnect(); } });
+    obs.observe($('#modalRoot'), {childList: true});
+  });
+}
+
+/* ============ router ============ */
+const routes = [
+  [/^\/$/, vDash, '/'],
+  [/^\/kunjungan$/, vVisits, '/kunjungan'],
+  [/^\/kunjungan\/baru$/, vForm, '/kunjungan'],
+  [/^\/kunjungan\/(\w+)\/ubah$/, vForm, '/kunjungan'],
+  [/^\/kunjungan\/(\w+)$/, vVisit, '/kunjungan'],
+  [/^\/cetak\/(\w+)\/(arsip|pasien)$/, vPrint, '/kunjungan'],
+  [/^\/pasien$/, vPatients, '/pasien'],
+  [/^\/pasien\/(\w+)$/, vPatient, '/pasien'],
+  [/^\/master$/, vMaster, '/master'],
+  [/^\/riwayat$/, vAudit, '/riwayat'],
+  [/^\/cadangan$/, vBackup, '/cadangan'],
+  [/^\/pengaturan$/, vSettings, '/pengaturan'],
+  [/^\/tentang$/, vAbout, '/tentang']
+];
+let formDirty = false, F = null;
+function render(){
+  if(!S) return;
+  const raw = (location.hash.slice(1) || '/');
+  const path = raw.split('?')[0];
+  let out = null, nav = '/';
+  for(const [re, fn, n] of routes){
+    const m = path.match(re);
+    if(m){ out = fn(...m.slice(1)); nav = n; break; }
+  }
+  if(!out) out = {title: 'Halaman tidak ditemukan', html: '<div class="panel empty"><b>Halaman tidak ditemukan</b>Kembali ke <a href="#/">ringkasan</a>.</div>'};
+  $('#view').innerHTML = out.html;
+  $('#pageTitle').textContent = out.title;
+  document.title = out.title + ' · Hasil Laboratorium Klinik';
+  $$('#nav a[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === nav));
+  $('#brandLogo').src = S.settings.logo || '';
+  $('#brandName').textContent = S.settings.nama || 'Hasil Laboratorium';
+  if(out.mount) out.mount();
+  window.scrollTo(0, 0);
+}
+function renderUserSel(){
+  const sel = $('#userSel');
+  const c = curUser();
+  sel.innerHTML = S.users.map(u => `<option value="${u.id}" ${u.id === c.id ? 'selected' : ''}>${esc(u.name)} (${ROLE_LABEL[u.role]})</option>`).join('');
+}
+const denied = () => ({title: 'Akses ditolak', html: '<div class="panel empty"><b>Peran Anda tidak punya akses ke halaman ini</b>Ganti pengguna di pojok kanan atas bila perlu.</div>'});
+const notFound = () => ({title: 'Tidak ditemukan', html: '<div class="panel empty"><b>Data tidak ditemukan</b>Mungkin sudah dihapus. <a href="#/kunjungan">Kembali ke daftar kunjungan</a>.</div>'});
+
+/* ============ dashboard ============ */
+function barChart(items){
+  const w = 560, h = 150, pb = 22, pt = 16, n = items.length, bw = w / n;
+  const max = Math.max(1, ...items.map(i => i.value));
+  const bars = items.map((it, i) => {
+    const bh = (h - pb - pt) * it.value / max, x = i * bw + bw * .18, y = h - pb - bh;
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw*.64).toFixed(1)}" height="${bh.toFixed(1)}" rx="2" fill="${it.today ? '#0b7a75' : '#8cc9c0'}"/>
+      ${it.value ? `<text x="${(x + bw*.32).toFixed(1)}" y="${(y-4).toFixed(1)}" font-size="11" text-anchor="middle" fill="#16262c">${it.value}</text>` : ''}
+      <text x="${(x + bw*.32).toFixed(1)}" y="${h-6}" font-size="10.5" text-anchor="middle" fill="#7b8d94">${esc(it.label)}</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Jumlah kunjungan per hari">${bars}<line x1="0" x2="${w}" y1="${h-pb}" y2="${h-pb}" stroke="#d9e2de"/></svg>`;
+}
+function vDash(){
+  const vis = activeVisits(), td = today();
+  const nToday = vis.filter(v => v.tgl_periksa === td).length;
+  const wait = vis.filter(v => v.status === 'selesai').length;
+  const crit = vis.filter(v => v.status !== 'tervalidasi' && hasCrit(v));
+  const days = [];
+  for(let i = 13; i >= 0; i--){
+    const d = addDays(td, -i);
+    days.push({label: d.slice(8), value: vis.filter(v => v.tgl_periksa === d).length, today: i === 0});
+  }
+  const since = addDays(td, -29), gc = {};
+  vis.filter(v => v.tgl_periksa >= since).forEach(v => Object.values(v.results || {}).forEach(r => { gc[r.group] = (gc[r.group] || 0) + 1; }));
+  const gmax = Math.max(1, ...Object.values(gc));
+  const bars = groupsSorted().filter(g => gc[g.code]).map(g => `<div class="b"><span>${esc(g.name)}</span><i style="width:${(gc[g.code]/gmax*100).toFixed(0)}%"></i><b>${gc[g.code]}</b></div>`).join('');
+  const drafts = vis.filter(v => v.status === 'draft').sort((a,b) => a.created - b.created).slice(0, 5);
+  const bk = S.lastBackup ? Math.floor((Date.now() - S.lastBackup) / 86400000) : null;
+  const needBk = S.patients.length > 0 && (bk == null || bk >= 7);
+  const row = v => { const p = patientById(v.patient_id); return `<tr><td><a href="#/kunjungan/${v.id}">${esc(v.no_lab)}</a></td><td>${esc(p?.nama || '-')}</td><td>${fmtDate(v.tgl_periksa)}</td><td><span class="chip ${v.status}">${STATUS_LABEL[v.status]}</span></td></tr>`; };
+  return {title: 'Ringkasan', html: `
+    ${needBk ? `<div class="banner"><span>${bk == null ? 'Data belum pernah dicadangkan.' : `Cadangan terakhir ${bk} hari lalu.`} Data hanya ada di browser ini, jadi buat cadangan berkala.</span><a class="btn sm" href="#/cadangan">Buat cadangan</a></div>` : ''}
+    ${!S.refVerified ? `<div class="banner"><span>Nilai rujukan bawaan masih nilai umum dan belum diverifikasi. Cocokkan dengan insert kit dan ketentuan laboratorium Anda, serta isi batas kritis (CH/CL), sebelum dipakai.</span><a class="btn sm" href="#/master">Buka master parameter</a></div>` : ''}
+    <div class="stats">
+      <div class="stat"><div class="n">${nToday}</div><div class="lbl">Kunjungan hari ini</div></div>
+      <div class="stat"><div class="n">${wait}</div><div class="lbl">Menunggu validasi</div></div>
+      <div class="stat ${crit.length ? 'alert' : ''}"><div class="n">${crit.length}</div><div class="lbl">Hasil kritis belum divalidasi</div></div>
+      <div class="stat"><div class="n">${S.patients.length}</div><div class="lbl">Pasien terdaftar</div></div>
+    </div>
+    <div class="cols">
+      <div>
+        <div class="panel"><h2>Kunjungan 14 hari terakhir</h2>${barChart(days)}</div>
+        <div class="panel flat"><div class="ws-head" style="border-top:0"><h3>Hasil kritis yang belum divalidasi</h3></div>
+          ${crit.length ? `<table><thead><tr><th>No. lab</th><th>Pasien</th><th>Tgl. periksa</th><th>Status</th></tr></thead><tbody>${crit.map(row).join('')}</tbody></table>` : '<div class="empty">Tidak ada hasil kritis yang menunggu.</div>'}
+        </div>
+      </div>
+      <div>
+        <div class="panel"><h2>Pemeriksaan per kelompok, 30 hari terakhir</h2>${bars ? `<div class="bars">${bars}</div>` : '<div class="muted">Belum ada hasil dalam 30 hari terakhir.</div>'}</div>
+        <div class="panel flat"><div class="ws-head" style="border-top:0"><h3>Draft terlama</h3></div>
+          ${drafts.length ? `<table><tbody>${drafts.map(row).join('')}</tbody></table>` : '<div class="empty">Tidak ada draft.</div>'}
+        </div>
+      </div>
+    </div>
+    ${!S.patients.length ? `<div class="panel"><b>Mulai dari sini</b><p class="muted" style="margin:6px 0 12px">Belum ada pasien. Tambahkan lewat Input hasil baru, atau coba dulu dengan data contoh (bisa dihapus kapan saja).</p><div class="row"><a class="btn pri" href="#/kunjungan/baru">Input hasil baru</a><button class="btn" data-act="demo">Isi data contoh</button></div></div>` : ''}`};
+}
+
+/* ============ kunjungan: daftar ============ */
+const LS = {q:'', status:'', group:'', from:'', to:'', only:'', page:1};
+function filterVisits(){
+  const q = LS.q.trim().toLowerCase();
+  return activeVisits().filter(v => {
+    const p = patientById(v.patient_id) || {};
+    if(q && !(`${v.no_lab} ${p.nama} ${p.no_rm}`.toLowerCase().includes(q))) return false;
+    if(LS.status && v.status !== LS.status) return false;
+    if(LS.group && !(v.groups || []).includes(LS.group)) return false;
+    if(LS.from && v.tgl_periksa < LS.from) return false;
+    if(LS.to && v.tgl_periksa > LS.to) return false;
+    if(LS.only === 'abn' && !hasAbn(v)) return false;
+    if(LS.only === 'crit' && !hasCrit(v)) return false;
+    return true;
+  }).sort((a,b) => (b.tgl_periksa.localeCompare(a.tgl_periksa)) || (b.created - a.created));
+}
+function visitsTable(){
+  const all = filterVisits(), per = 25, pages = Math.max(1, Math.ceil(all.length / per));
+  if(LS.page > pages) LS.page = pages;
+  const rows = all.slice((LS.page-1)*per, LS.page*per);
+  if(!rows.length) return `<div class="empty"><b>${activeVisits().length ? 'Tidak ada kunjungan yang cocok' : 'Belum ada kunjungan'}</b>${activeVisits().length ? 'Ubah atau kosongkan filter.' : 'Mulai dengan <a href="#/kunjungan/baru">input hasil baru</a>.'}</div>`;
+  return `<table class="stack"><thead><tr><th>No. lab</th><th>Tgl. periksa</th><th>Pasien</th><th>Kelompok</th><th class="num">Hasil</th><th>Penanda</th><th>Status</th><th></th></tr></thead><tbody>
+    ${rows.map(v => { const p = patientById(v.patient_id) || {}; const f = visitFlags(v); const n = Object.keys(v.results||{}).length;
+      return `<tr><td data-label=""><a href="#/kunjungan/${v.id}"><b>${esc(v.no_lab)}</b></a></td><td data-label="Tgl. periksa">${fmtDate(v.tgl_periksa)}</td>
+      <td data-label="Pasien">${esc(p.nama || '-')}<div class="dim" style="font-size:12px">RM ${esc(p.no_rm || '-')}</div></td>
+      <td data-label="Kelompok">${(v.groups||[]).map(g => `<span class="chip grp">${esc(groupByCode(g)?.name || g)}</span>`).join(' ')}</td>
+      <td data-label="Hasil" class="num">${n}</td>
+      <td data-label="Penanda">${['CH','CL','H','L'].filter(x => f.has(x)).map(x => `<span class="fl ${x}">${x}</span>`).join(' ')}${f.has('A') ? ' <span class="fl A" title="Hasil kualitatif di luar normal">!</span>' : ''}</td>
+      <td data-label="Status"><span class="chip ${v.status}">${STATUS_LABEL[v.status]}</span></td>
+      <td data-label=""><a class="btn sm" href="#/kunjungan/${v.id}">Buka</a></td></tr>`; }).join('')}
+  </tbody></table>
+  <div class="pager"><span class="muted">${all.length} kunjungan</span><button class="btn sm" data-act="pg" data-d="-1" ${LS.page<=1?'disabled':''}>Sebelumnya</button><span>Halaman ${LS.page} dari ${pages}</span><button class="btn sm" data-act="pg" data-d="1" ${LS.page>=pages?'disabled':''}>Berikutnya</button></div>`;
+}
+function vVisits(){
+  return {title: 'Kunjungan', html: `
+    <div class="filters">
+      <div class="fld" style="flex:1;min-width:220px"><label for="f-q">Cari nama, no. RM, atau no. lab</label><input type="search" id="f-q" data-ls="q" value="${esc(LS.q)}"></div>
+      <div class="fld"><label for="f-st">Status</label><select id="f-st" data-ls="status"><option value="">Semua</option>${Object.entries(STATUS_LABEL).map(([k,l]) => `<option value="${k}" ${LS.status===k?'selected':''}>${l}</option>`).join('')}</select></div>
+      <div class="fld"><label for="f-gr">Kelompok</label><select id="f-gr" data-ls="group"><option value="">Semua</option>${groupsSorted().map(g => `<option value="${g.code}" ${LS.group===g.code?'selected':''}>${esc(g.name)}</option>`).join('')}</select></div>
+      <div class="fld"><label for="f-fr">Dari tanggal</label><input type="date" id="f-fr" data-ls="from" value="${LS.from}"></div>
+      <div class="fld"><label for="f-to">Sampai tanggal</label><input type="date" id="f-to" data-ls="to" value="${LS.to}"></div>
+      <div class="fld"><label for="f-on">Penanda</label><select id="f-on" data-ls="only"><option value="">Semua</option><option value="abn" ${LS.only==='abn'?'selected':''}>Ada hasil abnormal</option><option value="crit" ${LS.only==='crit'?'selected':''}>Ada hasil kritis</option></select></div>
+      <button class="btn" data-act="csv">Ekspor CSV</button>
+    </div>
+    <div class="panel flat" id="vis-table">${visitsTable()}</div>`};
+}
+
+/* ============ pasien ============ */
+const PS = {q:''};
+function patientsTable(){
+  const q = PS.q.trim().toLowerCase();
+  const list = S.patients.filter(p => !q || `${p.nama} ${p.no_rm}`.toLowerCase().includes(q)).sort((a,b) => a.nama.localeCompare(b.nama));
+  if(!list.length) return `<div class="empty"><b>${S.patients.length ? 'Pasien tidak ditemukan' : 'Belum ada pasien'}</b>${S.patients.length ? 'Coba kata kunci lain.' : 'Tambahkan pasien pertama.'}</div>`;
+  return `<table class="stack"><thead><tr><th>No. RM</th><th>Nama</th><th>JK</th><th>Tgl. lahir (umur)</th><th class="num">Kunjungan</th><th>Terakhir</th><th></th></tr></thead><tbody>
+  ${list.map(p => { const vs = activeVisits().filter(v => v.patient_id === p.id).sort((a,b) => b.tgl_periksa.localeCompare(a.tgl_periksa));
+    return `<tr><td data-label="No. RM">${esc(p.no_rm)}</td><td data-label=""><a href="#/pasien/${p.id}"><b>${esc(p.nama)}</b></a></td><td data-label="JK">${p.jk}</td><td data-label="Tgl. lahir">${fmtDate(p.tgl_lahir)} ${p.tgl_lahir ? `(${ageText(p.tgl_lahir)})` : ''}</td><td data-label="Kunjungan" class="num">${vs.length}</td><td data-label="Terakhir">${vs[0] ? fmtDate(vs[0].tgl_periksa) : '-'}</td><td data-label=""><a class="btn sm" href="#/pasien/${p.id}">Buka</a></td></tr>`; }).join('')}
+  </tbody></table>`;
+}
+function vPatients(){
+  return {title: 'Pasien', html: `<div class="filters"><div class="fld" style="flex:1;min-width:240px"><label for="p-q">Cari nama atau no. RM</label><input type="search" id="p-q" data-ps="q" value="${esc(PS.q)}"></div>${can('edit') ? '<button class="btn pri" data-act="newPatient">Tambah pasien</button>' : ''}</div><div class="panel flat" id="pt-table">${patientsTable()}</div>`};
+}
+function patientModal(p, after){
+  const isNew = !p; p = p || {no_rm:'', nama:'', jk:'', tgl_lahir:'', alamat:'', telp:''};
+  openModal({title: isNew ? 'Pasien baru' : 'Ubah data pasien', body: `
+    <div class="grid2">
+      <div class="fld"><label for="pm-rm">No. RM</label><input type="text" id="pm-rm" value="${esc(p.no_rm)}"></div>
+      <div class="fld"><label for="pm-jk">Jenis kelamin</label><select id="pm-jk"><option value="">Pilih</option><option value="L" ${p.jk==='L'?'selected':''}>Laki-laki</option><option value="P" ${p.jk==='P'?'selected':''}>Perempuan</option></select></div>
+      <div class="fld" style="grid-column:1/-1"><label for="pm-nm">Nama lengkap</label><input type="text" id="pm-nm" value="${esc(p.nama)}"></div>
+      <div class="fld"><label for="pm-dob">Tanggal lahir</label><input type="date" id="pm-dob" value="${esc(p.tgl_lahir)}"></div>
+      <div class="fld"><label for="pm-tl">Telepon</label><input type="text" id="pm-tl" value="${esc(p.telp)}"></div>
+      <div class="fld" style="grid-column:1/-1"><label for="pm-al">Alamat</label><input type="text" id="pm-al" value="${esc(p.alamat)}"></div>
+    </div><div class="err" id="pm-err"></div>`,
+    actions: [{label: 'Batal'}, {label: 'Simpan pasien', cls: 'pri', close: false, run: (ov, close) => {
+      const g = id => $('#'+id, ov).value.trim();
+      const d = {no_rm: g('pm-rm'), nama: g('pm-nm'), jk: g('pm-jk'), tgl_lahir: g('pm-dob'), alamat: g('pm-al'), telp: g('pm-tl')};
+      const err = m => { $('#pm-err', ov).textContent = m; return false; };
+      if(!d.no_rm) return err('No. RM wajib diisi.');
+      if(!d.nama) return err('Nama pasien wajib diisi.');
+      if(!d.jk) return err('Pilih jenis kelamin. Nilai rujukan bergantung pada jenis kelamin.');
+      if(S.patients.some(x => x.no_rm.toLowerCase() === d.no_rm.toLowerCase() && x !== p)) return err('No. RM ini sudah dipakai pasien lain.');
+      if(isNew){ const np = {id: uid('p'), ...d, created: Date.now()}; S.patients.push(np); audit('buat', 'pasien', np.id, [`${np.nama} (RM ${np.no_rm})`]); save(); close(); after && after(np); }
+      else {
+        const ch = []; for(const k of Object.keys(d)) if(p[k] !== d[k]) ch.push(`${k}: ${p[k] || '-'} → ${d[k] || '-'}`);
+        Object.assign(p, d); if(ch.length) audit('ubah', 'pasien', p.id, ch); save(); close(); after && after(p);
+      }
+      return false;
+    }}]});
+}
+function vPatient(id){
+  const p = patientById(id); if(!p) return notFound();
+  const vs = activeVisits().filter(v => v.patient_id === id).sort((a,b) => b.tgl_periksa.localeCompare(a.tgl_periksa) || b.created - a.created);
+  // parameter numerik yang diperiksa lebih dari sekali
+  const cnt = {};
+  vs.forEach(v => Object.entries(v.results || {}).forEach(([tid, r]) => { if(r.type === 'num' && !isNaN(parseNum(r.val, r.unit === '/µL'))) (cnt[tid] = cnt[tid] || []).push({v, r}); }));
+  const trendIds = Object.keys(cnt).filter(k => cnt[k].length >= 2);
+  PT.id = id; if(!trendIds.includes(PT.tid)) PT.tid = trendIds[0] || null;
+  return {title: p.nama, html: `
+    <div class="panel"><div class="row sp"><div class="ptcard"><div><div class="nm" style="font-size:18px;font-weight:650">${esc(p.nama)}</div><div class="muted">RM ${esc(p.no_rm)} · ${SEX_LABEL[p.jk]} · ${p.tgl_lahir ? fmtDate(p.tgl_lahir) + ' (' + ageText(p.tgl_lahir) + ')' : 'tanggal lahir belum diisi'}</div><div class="dim">${esc(p.alamat || '')} ${esc(p.telp || '')}</div></div></div>
+      <div class="row">${can('edit') ? `<button class="btn" data-act="editPatient" data-id="${p.id}">Ubah data</button><a class="btn pri" href="#/kunjungan/baru?pasien=${p.id}">Input hasil baru</a>` : ''}</div></div></div>
+    <div class="panel"><h2>Tren parameter</h2>${trendIds.length ? `<div class="row" style="margin-bottom:10px"><div class="fld"><label for="tr-sel">Parameter</label><select id="tr-sel" style="min-width:240px">${trendIds.map(k => `<option value="${k}" ${k===PT.tid?'selected':''}>${esc(cnt[k][0].r.name)} (${cnt[k].length} kali)</option>`).join('')}</select></div></div><div id="trend">${trendHTML(p, cnt[PT.tid])}</div>` : '<div class="muted">Tren muncul setelah parameter angka yang sama diperiksa dua kali atau lebih.</div>'}</div>
+    <div class="panel flat"><div class="ws-head" style="border-top:0"><h3>Riwayat kunjungan (${vs.length})</h3></div>
+    ${vs.length ? `<table><thead><tr><th>No. lab</th><th>Tgl. periksa</th><th>Kelompok</th><th class="num">Hasil</th><th>Status</th></tr></thead><tbody>${vs.map(v => `<tr><td><a href="#/kunjungan/${v.id}"><b>${esc(v.no_lab)}</b></a></td><td>${fmtDate(v.tgl_periksa)}</td><td>${(v.groups||[]).map(g => `<span class="chip grp">${esc(groupByCode(g)?.name||g)}</span>`).join(' ')}</td><td class="num">${Object.keys(v.results||{}).length}</td><td><span class="chip ${v.status}">${STATUS_LABEL[v.status]}</span></td></tr>`).join('')}</tbody></table>` : '<div class="empty">Belum ada kunjungan.</div>'}</div>`,
+    mount(){ PT.cnt = cnt; }};
+}
+const PT = {id:null, tid:null, cnt:null};
+function trendHTML(p, pts){
+  pts = [...pts].sort((a,b) => a.v.tgl_periksa.localeCompare(b.v.tgl_periksa) || a.v.created - b.v.created);
+  const t = testById(PT.tid);
+  const th = pts[0].r.unit === '/µL';
+  const vals = pts.map(x => parseNum(x.r.val, th));
+  const rg = t ? pickRange(t, p.jk, ageYears(p.tgl_lahir), '') : null;
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if(rg){ if(rg.lo != null) lo = Math.min(lo, rg.lo); if(rg.hi != null) hi = Math.max(hi, rg.hi); }
+  if(hi === lo){ hi += 1; lo -= 1; }
+  const padv = (hi - lo) * .12; lo -= padv; hi += padv;
+  const w = 640, h = 220, L = 54, R = 14, T = 14, B = 34;
+  const X = i => L + (pts.length === 1 ? (w-L-R)/2 : i * (w-L-R) / (pts.length-1));
+  const Y = v => T + (h-T-B) * (1 - (v - lo) / (hi - lo));
+  const band = rg && (rg.lo != null || rg.hi != null) ? `<rect x="${L}" width="${w-L-R}" y="${Y(rg.hi != null ? Math.min(rg.hi, hi) : hi).toFixed(1)}" height="${(Y(rg.lo != null ? Math.max(rg.lo, lo) : lo) - Y(rg.hi != null ? Math.min(rg.hi, hi) : hi)).toFixed(1)}" fill="#cfe8e3" opacity=".7"/>` : '';
+  const ticks = [0,1,2,3].map(i => { const v = lo + (hi-lo)*i/3; return `<line x1="${L}" x2="${w-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e9efec"/><text x="${L-6}" y="${Y(v)+4}" font-size="11" text-anchor="end" fill="#7b8d94">${t ? fmtN(+v.toFixed(2), t) : v.toFixed(1)}</text>`; }).join('');
+  const line = pts.map((_, i) => `${X(i).toFixed(1)},${Y(vals[i]).toFixed(1)}`).join(' ');
+  const dots = pts.map((x, i) => `<circle cx="${X(i)}" cy="${Y(vals[i])}" r="4.5" fill="${x.r.flag === 'CH' || x.r.flag === 'CL' ? '#b3191c' : x.r.flag === 'H' ? '#a8500a' : x.r.flag === 'L' ? '#1b49c8' : '#0b7a75'}"/><text x="${X(i)}" y="${Y(vals[i])-9}" font-size="11" text-anchor="middle" fill="#16262c">${esc(fmtVal(t, x.r.val))}</text><text x="${X(i)}" y="${h-12}" font-size="10.5" text-anchor="middle" fill="#7b8d94">${fmtDate(x.v.tgl_periksa).slice(0,5)}</text>`).join('');
+  const last = pts.slice(-5).reverse();
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Tren ${esc(pts[0].r.name)}">${band}${ticks}<polyline points="${line}" fill="none" stroke="#0b7a75" stroke-width="2"/>${dots}</svg>
+  <div class="muted" style="font-size:12.5px;margin:2px 0 10px">${rg ? 'Pita hijau menunjukkan rentang rujukan saat ini.' : 'Rentang rujukan tidak digambar karena belum pasti (jenis kelamin, usia, atau fase belum menentukan satu rentang).'}</div>
+  <table><thead><tr><th>Tgl. periksa</th><th>No. lab</th><th class="num">Hasil</th><th>Satuan</th><th>Ket.</th></tr></thead><tbody>${last.map(x => `<tr><td>${fmtDate(x.v.tgl_periksa)}</td><td><a href="#/kunjungan/${x.v.id}">${esc(x.v.no_lab)}</a></td><td class="num"><b>${esc(fmtVal(t, x.r.val))}</b></td><td>${esc(x.r.unit)}</td><td>${x.r.flag ? `<span class="fl ${x.r.flag}">${x.r.flag}</span>` : ''}</td></tr>`).join('')}</tbody></table>`;
+}
+
+/* ============ form input hasil ============ */
+function newForm(){
+  const t = today();
+  return {id:null, no_lab:null, patient_id:null, tgl_sampel:t, tgl_periksa:t, tgl_hasil:'', dokter:'', ruangan:'', diagnosis:'', sampel:'', catatan:'', status:'draft', groups:[], results:{}, extra:[], reason:''};
+}
+function formFromVisit(v){
+  const f = clone(v);
+  f.extra = [];
+  f.results = {};
+  Object.entries(v.results || {}).forEach(([id, r]) => {
+    if(r.group === 'lainnya' && id.startsWith('x')) f.extra.push({id, name: r.name, val: r.val, unit: r.unit, ref: r.ref, flag: r.flag});
+    else f.results[id] = clone(r);
+  });
+  return f;
+}
+function vForm(id){
+  if(!can('edit')) return denied();
+  if(id){
+    const v = visitById(id);
+    if(!v || v.deleted) return notFound();
+    if(v.status === 'tervalidasi' && !can('editLocked')) return {title: 'Terkunci', html: '<div class="panel empty"><b>Kunjungan ini sudah tervalidasi</b>Hanya penanggung jawab atau admin yang dapat mengubahnya, dengan alasan tertulis.</div>'};
+    F = formFromVisit(v);
+  } else {
+    F = newForm();
+    const q = new URLSearchParams((location.hash.split('?')[1]) || '');
+    if(q.get('pasien') && patientById(q.get('pasien'))) F.patient_id = q.get('pasien');
+  }
+  formDirty = false;
+  return {title: id ? `Ubah kunjungan ${F.no_lab}` : 'Input hasil baru', html: formShell(), mount(){ renderPatientBox(); renderResBox(); }};
+}
+function ctxF(){
+  const p = patientById(F.patient_id);
+  return {sex: p?.jk || '', ageY: p?.tgl_lahir ? ageYears(p.tgl_lahir, F.tgl_periksa) : null};
+}
+function formShell(){
+  const fl = (lbl, key, type = 'text', extra = '') => `<div class="fld"><label for="ff-${key}">${lbl}</label><input type="${type}" id="ff-${key}" data-f="${key}" value="${esc(F[key])}" ${extra}></div>`;
+  return `<div class="panel"><h2>Pasien</h2><div id="pt-box"></div></div>
+  <div class="panel"><h2>Data kunjungan</h2><div class="grid3">
+    ${fl('Tanggal pengambilan sampel','tgl_sampel','date')}${fl('Tanggal pemeriksaan','tgl_periksa','date')}
+    ${fl('Jenis sampel','sampel','text','placeholder="Darah, urin, serum…"')}
+    ${fl('Dokter pengirim','dokter')}${fl('Asal ruangan / instansi','ruangan')}${fl('Diagnosis / keterangan klinis','diagnosis')}
+  </div></div>
+  <div class="panel"><h2>Pemeriksaan yang dikerjakan</h2><div class="chips" id="grp-chips">${groupsSorted().map(g => `<label class="gchip ${F.groups.includes(g.code) ? 'on' : ''}"><input type="checkbox" data-grp="${g.code}" ${F.groups.includes(g.code) ? 'checked' : ''}>${esc(g.name)}</label>`).join('')}</div>
+    <div class="muted" style="margin-top:8px;font-size:13px">Form di bawah hanya menampilkan parameter dari kelompok yang dicentang. Parameter yang dikosongkan tidak disimpan dan tidak tercetak di Lembar Pasien.</div></div>
+  <div id="res-box"></div>
+  <div class="panel"><h2>Catatan</h2><textarea id="ff-catatan" data-f="catatan" rows="3">${esc(F.catatan)}</textarea></div>
+  <div class="savebar"><span class="grow" id="save-hint"></span><a class="btn" href="#/kunjungan${F.id ? '/' + F.id : ''}">Batal</a><button class="btn" data-act="saveDraft">${F.id && F.status !== 'draft' ? 'Simpan perubahan' : 'Simpan draft'}</button>${F.status !== 'selesai' && F.status !== 'tervalidasi' ? '<button class="btn pri" data-act="saveDone">Simpan dan tandai selesai</button>' : ''}</div>`;
+}
+function renderPatientBox(){
+  const box = $('#pt-box'); if(!box) return;
+  const p = patientById(F.patient_id);
+  if(p){
+    box.innerHTML = `<div class="row sp"><div class="ptcard"><div><div class="nm">${esc(p.nama)}</div><div class="muted">RM ${esc(p.no_rm)} · ${SEX_LABEL[p.jk]} · ${p.tgl_lahir ? fmtDate(p.tgl_lahir) + ' (' + ageText(p.tgl_lahir, F.tgl_periksa) + ')' : '<span style="color:var(--crit)">tanggal lahir belum diisi, rujukan berdasarkan usia tidak dapat dipakai</span>'}</div></div></div>
+      <div class="row"><button class="btn sm" data-act="editPatient" data-id="${p.id}" data-back="1">Ubah data</button><button class="btn sm" data-act="changePatient">Ganti pasien</button></div></div>`;
+  } else {
+    box.innerHTML = `<div class="row"><div class="fld grow" style="min-width:260px"><label for="pt-q">Cari pasien (nama atau no. RM)</label><input type="search" id="pt-q" autocomplete="off"></div><button class="btn pri" data-act="newPatient" data-back="1" style="align-self:flex-end">Pasien baru</button></div><div id="pt-sugg"></div>`;
+  }
+}
+function suggest(q){
+  q = q.trim().toLowerCase();
+  const box = $('#pt-sugg'); if(!box) return;
+  if(!q){ box.innerHTML = ''; return; }
+  const list = S.patients.filter(p => `${p.nama} ${p.no_rm}`.toLowerCase().includes(q)).slice(0, 8);
+  box.innerHTML = list.length ? `<div class="sugg">${list.map(p => `<button type="button" data-act="pickPatient" data-id="${p.id}"><span><b>${esc(p.nama)}</b> <span class="muted">RM ${esc(p.no_rm)}</span></span><span class="muted">${SEX_LABEL[p.jk]}${p.tgl_lahir ? ', ' + ageText(p.tgl_lahir) : ''}</span></button>`).join('')}</div>` : '<div class="muted" style="margin-top:8px">Tidak ada pasien yang cocok. Pakai tombol Pasien baru.</div>';
+}
+function rowState(t, r){
+  const {sex, ageY} = ctxF();
+  const val = r?.val ?? '';
+  const ev = evalResult(t, val, r?.cond || '', sex, ageY);
+  return ev;
+}
+function rowHTML(t){
+  const r = F.results[t.id] || {};
+  const {sex, ageY} = ctxF();
+  const conds = t.type === 'num' ? condsOf(t, sex) : [];
+  const ev = rowState(t, r);
+  const flag = r.manual ? r.flag : (r.val ? ev.flag : '');
+  const needCond = conds.length > 1;
+  let input;
+  if(t.type === 'choice') input = `<select data-res="${t.id}" class="v"><option value=""></option>${t.options.map(o => `<option ${r.val === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+  else if(t.type === 'combo') input = `<input type="text" class="v" data-res="${t.id}" list="dl-${t.id}" value="${esc(r.val || '')}" style="text-align:left"><datalist id="dl-${t.id}">${t.options.map(o => `<option value="${esc(o)}">`).join('')}</datalist>`;
+  else if(t.type === 'text') input = `<input type="text" class="v" data-res="${t.id}" value="${esc(r.val || '')}" style="text-align:left">`;
+  else input = `<input type="text" inputmode="decimal" autocomplete="off" class="v" data-res="${t.id}" value="${esc(r.val ? fmtValEdit(t, r.val) : '')}">`;
+  const refTxt = esc(t.refShort || t.ref || '-');
+  const g = t.type === 'num' && r.val && ev.range ? gaugeOf(ev.range, ev.v) : null;
+  return `<tr data-tid="${t.id}" class="${r.val ? 'hasv' : ''} f${flag}">
+    <td class="nm">${esc(t.name)}</td><td class="in">${input}</td><td class="un">${esc(t.unit)}</td>
+    <td class="rf" title="${esc(t.ref)}">${refTxt}${needCond ? `<br><select class="cond" data-cond="${t.id}"><option value="">Pilih ${t.ranges.some(x => /pagi|sore/i.test(x.cond||'')) ? 'waktu' : 'fase / kondisi'}…</option>${conds.map(c => `<option ${r.cond === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>` : ''}</td>
+    <td class="gz">${gaugeHTML(g, flag)}</td>
+    <td class="fk">${flagCell(t.id, flag, r.manual, ev.abn)}</td></tr>`;
+}
+const fmtValEdit = (t, v) => v;
+function flagCell(tid, flag, manual, abn){
+  return `<div class="flagwrap"><select data-flag="${tid}" aria-label="Penanda"><option value="" ${!flag ? 'selected' : ''}>${abn && !flag ? '!' : '–'}</option>${['H','L','CH','CL'].map(f => `<option ${flag === f ? 'selected' : ''}>${f}</option>`).join('')}</select>${manual ? `<button class="btn sm" data-act="flagAuto" data-tid="${tid}" title="Kembalikan ke penanda otomatis">auto</button>` : ''}</div>`;
+}
+function renderResBox(){
+  const box = $('#res-box'); if(!box) return;
+  const gs = groupsSorted().filter(g => F.groups.includes(g.code));
+  if(!gs.length){ box.innerHTML = '<div class="panel empty"><b>Belum ada kelompok pemeriksaan dipilih</b>Centang kelompok di atas untuk menampilkan parameternya.</div>'; return; }
+  box.innerHTML = gs.map(g => {
+    if(g.code === 'lainnya') return `<div class="panel flat"><div class="ws-head" style="border-top:0"><h3>${esc(g.title || g.name)}</h3><button class="btn sm" data-act="addExtra">Tambah baris</button></div>
+      <table class="res"><thead><tr><th>Pemeriksaan</th><th>Hasil</th><th>Satuan</th><th>Nilai rujukan</th><th></th><th>Ket.</th></tr></thead><tbody id="extra-body">${extraRows()}</tbody></table></div>`;
+    const ts = S.tests.filter(t => t.group === g.code && t.active).sort((a,b) => a.order - b.order);
+    let sub = null, rows = '';
+    ts.forEach(t => { if(t.sub !== sub){ sub = t.sub; if(sub) rows += `<tr class="sub"><td colspan="6">${esc(sub)}</td></tr>`; } rows += rowHTML(t); });
+    return `<div class="panel flat"><div class="ws-head" style="border-top:0"><h3>${esc(g.title || g.name)}</h3><span class="muted" style="font-size:12.5px">${ts.length} parameter</span></div>
+      <div class="scroll-x"><table class="res"><thead><tr><th>Pemeriksaan</th><th class="num">Hasil</th><th>Satuan</th><th>Nilai rujukan</th><th title="Posisi nilai terhadap rentang rujukan">Posisi</th><th>Ket.</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }).join('');
+}
+function extraRows(){
+  if(!F.extra.length) return '<tr><td colspan="6" class="muted" style="padding:12px 10px">Belum ada baris. Pakai Tambah baris untuk pemeriksaan di luar daftar.</td></tr>';
+  return F.extra.map((x, i) => `<tr data-x="${i}"><td><input type="text" data-xf="name" value="${esc(x.name)}" placeholder="Nama pemeriksaan"></td><td><input type="text" data-xf="val" value="${esc(x.val)}" style="font-weight:650" placeholder="Hasil"></td><td><input type="text" data-xf="unit" value="${esc(x.unit)}" placeholder="Satuan"></td><td><input type="text" data-xf="ref" value="${esc(x.ref)}" placeholder="Nilai rujukan"></td><td><button class="btn sm danger" data-act="delExtra" data-i="${i}">Hapus</button></td><td><select data-xf="flag" style="width:76px"><option value=""></option>${['H','L','CH','CL'].map(f => `<option ${x.flag === f ? 'selected' : ''}>${f}</option>`).join('')}</select></td></tr>`).join('');
+}
+function updateRow(tid){
+  const t = testById(tid), tr = $(`tr[data-tid="${tid}"]`); if(!tr) return;
+  const r = F.results[tid] || {};
+  const ev = rowState(t, r);
+  if(!r.manual) r.flag = ev.flag;
+  r.abn = ev.abn;
+  const flag = r.manual ? r.flag : ev.flag;
+  tr.className = (r.val ? 'hasv ' : '') + 'f' + flag;
+  const g = t.type === 'num' && r.val && ev.range ? gaugeOf(ev.range, ev.v) : null;
+  $('.gz', tr).innerHTML = gaugeHTML(g, flag);
+  $('.fk', tr).innerHTML = flagCell(tid, flag, r.manual, ev.abn);
+}
+function recomputeAll(){
+  Object.keys(F.results).forEach(tid => { const r = F.results[tid]; if(r && !r.manual && testById(tid)) { r.fresh = true; } });
+  renderResBox();
+}
+function mountedForm(){ return !!$('#res-box'); }
+
+async function saveForm(markDone){
+  const p = patientById(F.patient_id);
+  const err = m => { toast(m, true); return false; };
+  if(!p) return err('Pilih atau tambahkan pasien dulu.');
+  if(!F.tgl_periksa) return err('Isi tanggal pemeriksaan.');
+  // kumpulkan hasil
+  const results = {};
+  let count = 0;
+  Object.entries(F.results).forEach(([tid, r]) => {
+    const t = testById(tid); const val = String(r.val ?? '').trim();
+    if(!val) return;
+    if(t && t.type === 'num' && isNaN(parseNum(val, t.thousands))){ F._bad = (F._bad || []).concat(t.name); }
+    const snap = (r.name && !r.fresh) ? {name: r.name, unit: r.unit, ref: r.ref, refShort: r.refShort, group: r.group, sub: r.sub, order: r.order, type: r.type} : snapshotOf(t);
+    results[tid] = {val: normVal(t, val), cond: r.cond || '', flag: r.flag || '', manual: !!r.manual, abn: !!r.abn, ...snap};
+    count++;
+  });
+  if(F._bad && F._bad.length){ const b = F._bad.join(', '); F._bad = null; return err(`Nilai angka tidak valid : ${b}. Pakai angka saja (koma atau titik untuk desimal).`); }
+  F.extra.forEach((x, i) => {
+    if(!String(x.val).trim() || !String(x.name).trim()) return;
+    results[x.id || ('x' + (i+1))] = {val: String(x.val).trim(), cond:'', flag: x.flag || '', manual: true, abn:false, name: x.name.trim(), unit: x.unit || '', ref: x.ref || '', refShort: x.ref || '', group: 'lainnya', sub: null, order: 9000 + i, type: 'text'};
+    count++;
+  });
+  if(markDone && !count) return err('Isi minimal satu hasil sebelum menandai selesai.');
+  const wasLocked = F.id && visitById(F.id).status === 'tervalidasi';
+  let reason = '';
+  if(wasLocked){
+    reason = await askReason('Ubah hasil yang sudah tervalidasi', 'Perubahan akan dicatat di riwayat dan status kembali ke Selesai agar divalidasi ulang.');
+    if(!reason) return false;
+  }
+  const meta = {patient_id: F.patient_id, tgl_sampel: F.tgl_sampel, tgl_periksa: F.tgl_periksa, dokter: F.dokter.trim(), ruangan: F.ruangan.trim(), diagnosis: F.diagnosis.trim(), sampel: F.sampel.trim(), catatan: F.catatan, groups: F.groups.slice()};
+  if(F.id){
+    const v = visitById(F.id);
+    const d = diffResults(v.results, results);
+    ['dokter','ruangan','diagnosis','sampel','catatan','tgl_sampel','tgl_periksa','patient_id'].forEach(k => { if(v[k] !== meta[k]) d.push(`${k}: ${v[k] || '-'} → ${meta[k] || '-'}`); });
+    Object.assign(v, meta, {results});
+    if(wasLocked){ v.status = 'selesai'; v.validated_by = null; v.validated_at = null; d.push('status: tervalidasi → selesai (perlu validasi ulang)'); }
+    if(markDone && v.status === 'draft'){ v.status = 'selesai'; if(!v.tgl_hasil) v.tgl_hasil = today(); d.push('status: draft → selesai'); }
+    audit('ubah', 'kunjungan', v.id, d.length ? d : ['tanpa perubahan data'], reason);
+    save(); formDirty = false; toast('Perubahan disimpan'); location.hash = '#/kunjungan/' + v.id;
+  } else {
+    const v = {id: uid('v'), no_lab: nextLabNo(), ...meta, tgl_hasil: markDone ? today() : '', status: markDone ? 'selesai' : 'draft', results, created: Date.now(), created_by: curUser().name, validated_by: null, validated_at: null, deleted: false};
+    S.visits.push(v);
+    audit('buat', 'kunjungan', v.id, [`${v.no_lab} untuk ${p.nama}`, `${count} hasil`, markDone ? 'status selesai' : 'status draft']);
+    save(); formDirty = false; toast(markDone ? 'Disimpan dan ditandai selesai' : 'Draft disimpan'); location.hash = '#/kunjungan/' + v.id;
+  }
+  return true;
+}
+
+/* ============ detail kunjungan ============ */
+const VT = {tab:'hasil'};
+function vVisit(id){
+  const v = visitById(id); if(!v || v.deleted) return notFound();
+  const p = patientById(v.patient_id) || {};
+  const list = resultList(v);
+  const printable = v.status !== 'draft';
+  const logs = S.audit.filter(a => a.ref === v.id);
+  let body = '';
+  if(VT.tab === 'hasil'){
+    let rows = '', lastG = null, lastSub = null;
+    list.forEach(r => {
+      if(r.group !== lastG){ lastG = r.group; lastSub = null; rows += `<tr><td colspan="5" style="background:#f0f6f4;font-weight:650">${esc(groupByCode(r.group)?.name || r.group)}</td></tr>`; }
+      if(r.sub && r.sub !== lastSub){ lastSub = r.sub; rows += `<tr><td colspan="5" class="dim" style="font-style:italic;padding:3px 10px">${esc(r.sub)}</td></tr>`; }
+      const t = testById(r.id);
+      rows += `<tr><td>${esc(r.name)}</td><td class="num"><b>${esc(fmtVal(r, r.val))}</b>${r.cond ? ` <span class="dim">(${esc(r.cond)})</span>` : ''}</td><td>${esc(r.unit)}</td><td class="muted" style="font-size:12.5px">${esc((r.refShort || r.ref || '').replace(/\n/g, '; '))}</td><td>${r.flag ? `<span class="fl ${r.flag}">${r.flag}</span>` : r.abn ? '<span class="fl A" title="Di luar normal">!</span>' : ''}</td></tr>`;
+    });
+    body = list.length ? `<div class="panel flat"><table><thead><tr><th>Pemeriksaan</th><th class="num">Hasil</th><th>Satuan</th><th>Nilai rujukan</th><th>Ket.</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="panel empty"><b>Belum ada hasil</b>Buka Ubah untuk mengisi hasil.</div>';
+    if(v.catatan) body += `<div class="panel"><h2>Catatan</h2><div style="white-space:pre-wrap">${esc(v.catatan)}</div></div>`;
+  } else {
+    body = logs.length ? `<div class="panel flat"><table><thead><tr><th>Waktu</th><th>Pengguna</th><th>Aksi</th><th>Rincian</th></tr></thead><tbody>${logs.map(a => `<tr><td style="white-space:nowrap">${fmtDT(a.t)}</td><td>${esc(a.user)}<div class="dim" style="font-size:12px">${ROLE_LABEL[a.role]}</div></td><td>${esc(a.aksi)}</td><td>${a.detail.map(d => `<div>${esc(d)}</div>`).join('')}${a.alasan ? `<div class="muted"><i>Alasan : ${esc(a.alasan)}</i></div>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<div class="panel empty">Belum ada riwayat.</div>';
+  }
+  const canEdit = can('edit') && (v.status !== 'tervalidasi' || can('editLocked'));
+  return {title: v.no_lab, html: `
+    <div class="panel"><div class="row sp">
+      <div><div class="row"><span style="font-size:18px;font-weight:650">${esc(p.nama || '-')}</span><span class="chip ${v.status}">${STATUS_LABEL[v.status]}</span></div>
+        <div class="muted">RM ${esc(p.no_rm || '-')} · ${SEX_LABEL[p.jk] || ''} · ${p.tgl_lahir ? fmtDate(p.tgl_lahir) + ' (' + ageText(p.tgl_lahir, v.tgl_periksa) + ')' : ''} · <a href="#/pasien/${p.id}">Lihat riwayat pasien</a></div></div>
+      <div class="row">
+        ${v.status === 'draft' && can('edit') ? '<button class="btn" data-act="markDone" data-id="' + v.id + '">Tandai selesai</button>' : ''}
+        ${v.status === 'selesai' && can('validate') ? '<button class="btn pri" data-act="validate" data-id="' + v.id + '">Validasi hasil</button>' : ''}
+        ${canEdit ? `<a class="btn" href="#/kunjungan/${v.id}/ubah">Ubah</a>` : ''}
+        <a class="btn ${printable ? 'pri' : ''}" ${printable ? `href="#/cetak/${v.id}/pasien"` : 'disabled title="Tandai selesai dulu"'}>Cetak Lembar Pasien</a>
+        <a class="btn" ${printable ? `href="#/cetak/${v.id}/arsip"` : 'disabled title="Tandai selesai dulu"'}>Cetak Lembar Arsip</a>
+        ${can('delete') ? `<button class="btn danger" data-act="delVisit" data-id="${v.id}">Hapus</button>` : ''}
+      </div></div>
+      <dl class="kv" style="margin:14px 0 0"><dt>Tgl. pengambilan sampel</dt><dd>${fmtDate(v.tgl_sampel) || '-'}</dd><dt>Tgl. pemeriksaan</dt><dd>${fmtDate(v.tgl_periksa)}</dd><dt>Tgl. hasil keluar</dt><dd>${fmtDate(v.tgl_hasil) || '-'}</dd><dt>Dokter pengirim</dt><dd>${esc(v.dokter || '-')}</dd><dt>Asal ruangan</dt><dd>${esc(v.ruangan || '-')}</dd><dt>Diagnosis</dt><dd>${esc(v.diagnosis || '-')}</dd><dt>Jenis sampel</dt><dd>${esc(v.sampel || '-')}</dd>${v.validated_at ? `<dt>Divalidasi</dt><dd>${esc(v.validated_by)} · ${fmtDT(v.validated_at)}</dd>` : ''}</dl>
+    </div>
+    <div class="tabs"><button class="${VT.tab==='hasil'?'on':''}" data-act="vtab" data-t="hasil">Hasil (${list.length})</button><button class="${VT.tab==='log'?'on':''}" data-act="vtab" data-t="log">Riwayat perubahan (${logs.length})</button></div>
+    ${body}`};
+}
+
+/* ============ lembar cetak ============ */
+function sheetHTML(v, jenis){
+  const p = patientById(v.patient_id) || {}, st = S.settings;
+  const idn = [
+    ['No. Laboratorium', v.no_lab, 'Tgl. Pengambilan Sampel', fmtDate(v.tgl_sampel)],
+    ['Nama Pasien', p.nama, 'Tgl. Pemeriksaan', fmtDate(v.tgl_periksa)],
+    ['No. RM / ID Pasien', p.no_rm, 'Tgl. Hasil Keluar', fmtDate(v.tgl_hasil || today())],
+    ['Jenis Kelamin', SEX_LABEL[p.jk] || '', 'Dokter Pengirim', v.dokter],
+    ['Tanggal Lahir / Umur', p.tgl_lahir ? `${fmtDate(p.tgl_lahir)} (${ageText(p.tgl_lahir, v.tgl_periksa)})` : '', 'Asal Ruangan / Instansi', v.ruangan],
+    ['Jenis Sampel', v.sampel, 'Diagnosis / Ket. Klinis', v.diagnosis]
+  ];
+  const idHTML = `<div class="idn"><div>${idn.map(r => `<div class="ln"><span>${r[0]} :</span><b>${esc(r[1])}</b></div>`).join('')}</div><div>${idn.map(r => `<div class="ln"><span>${r[2]} :</span><b>${esc(r[3])}</b></div>`).join('')}</div></div>`;
+  let table = '';
+  const refHTML = x => esc(x || '').replace(/\n/g, '<br>');
+  const flagTxt = r => r ? (r.flag || '') : '';
+  if(jenis === 'pasien'){
+    const list = resultList(v);
+    table = `<table class="t"><colgroup><col style="width:8mm"><col style="width:26mm"><col><col style="width:24mm"><col style="width:16mm"><col style="width:42mm"><col style="width:12mm"></colgroup>
+      <thead><tr><th>No</th><th>Kelompok</th><th>Pemeriksaan</th><th>Hasil</th><th>Satuan</th><th>Nilai Rujukan</th><th>Ket.</th></tr></thead><tbody>
+      ${list.map((r, i) => `<tr><td class="c">${i+1}</td><td>${esc(groupByCode(r.group)?.name || '')}</td><td>${esc(r.name)}${r.cond ? ` <span style="font-size:8pt">(${esc(r.cond)})</span>` : ''}</td><td class="v ${r.flag || r.abn ? 'ab' : ''}">${esc(fmtVal(r, r.val))}</td><td class="c">${esc(r.unit)}</td><td class="rfc">${refHTML((r.refShort || r.ref || '').replace(/; /g, '\n'))}</td><td class="c"><b>${esc(r.flag)}</b></td></tr>`).join('')}
+      </tbody></table>`;
+  } else {
+    let body = '';
+    groupsSorted().filter(g => (v.groups || []).includes(g.code)).forEach(g => {
+      body += `<tr class="g"><td colspan="5">${esc(g.title || g.name)}</td></tr>`;
+      if(g.code === 'lainnya'){
+        const ex = resultList(v).filter(r => r.group === 'lainnya');
+        for(let i = 0; i < Math.max(4, ex.length); i++){
+          const r = ex[i];
+          body += `<tr><td class="in1">${esc(r?.name || '')}&nbsp;</td><td class="v ${r?.flag ? 'ab' : ''}">${esc(r?.val || '')}</td><td class="c">${esc(r?.unit || '')}</td><td class="rfc">${refHTML(r?.ref)}</td><td class="c"><b>${esc(r?.flag || '')}</b></td></tr>`;
+        }
+        return;
+      }
+      let sub = null;
+      S.tests.filter(t => t.group === g.code && (t.active || v.results?.[t.id])).sort((a,b) => a.order - b.order).forEach(t => {
+        if(t.sub !== sub){ sub = t.sub; if(sub) body += `<tr class="s"><td colspan="5">${esc(sub)}</td></tr>`; }
+        const r = v.results?.[t.id];
+        const nm = r ? r.name : t.name, un = r ? r.unit : t.unit, rf = r ? r.ref : t.ref;
+        body += `<tr><td class="in1">${esc(nm)}${r?.cond ? ` <span style="font-size:8pt">(${esc(r.cond)})</span>` : ''}</td><td class="v ${r && (r.flag || r.abn) ? 'ab' : ''}">${r ? esc(fmtVal(t, r.val)) : ''}</td><td class="c">${esc(un)}</td><td class="rfc">${refHTML(rf)}</td><td class="c"><b>${esc(flagTxt(r))}</b></td></tr>`;
+      });
+    });
+    table = `<table class="t"><colgroup><col style="width:56mm"><col style="width:26mm"><col style="width:20mm"><col><col style="width:16mm"></colgroup><thead><tr><th>PEMERIKSAAN</th><th>HASIL</th><th>SATUAN</th><th>NILAI RUJUKAN</th><th>KET.</th></tr></thead><tbody>${body}</tbody></table>`;
+  }
+  const contact = [st.telp ? 'Telp: ' + st.telp : '', st.email ? 'Email: ' + st.email : '', st.unit].filter(Boolean).join('   |   ');
+  return `<div class="sheet">
+    <div class="kop">${st.logo ? `<img src="${esc(st.logo)}" alt="">` : '<span></span>'}<div class="tx"><b>${esc(st.nama || 'Laboratorium Klinik')}</b>${st.alamat ? `<span>${esc(st.alamat)}</span>` : ''}${contact ? `<span>${esc(contact)}</span>` : ''}</div><span></span></div>
+    <h1 class="jd">HASIL PEMERIKSAAN LABORATORIUM</h1>
+    ${idHTML}${table}
+    <div class="endblk"><div class="ctt"><b>Catatan :</b> ${esc(v.catatan || '')}</div>
+    <div class="ket">Ket.: H = di atas nilai rujukan &nbsp;|&nbsp; L = di bawah nilai rujukan &nbsp;|&nbsp; CH = Critical High &nbsp;|&nbsp; CL = Critical Low. Rujukan: L = Laki-laki, P = Perempuan.</div>
+    <div class="ttd"><div>${st.kota ? esc(st.kota) + ', ' : ''}${fmtDate(v.tgl_hasil || today())}</div><div><b>Penanggung Jawab Laboratorium</b></div><div class="sp">${st.ttd ? `<img src="${esc(st.ttd)}" alt="">` : ''}</div><b class="nm">${esc(st.pj_nama) || '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'}</b><div style="font-size:9pt">SIP : ${esc(st.pj_sip) || '....................'}</div></div></div>
+  </div>`;
+}
+function vPrint(id, jenis){
+  const v = visitById(id); if(!v || v.deleted) return notFound();
+  if(v.status === 'draft') return {title: 'Belum bisa dicetak', html: '<div class="panel empty"><b>Kunjungan masih draft</b>Tandai selesai dulu supaya lembar hasil bisa dicetak.</div>'};
+  return {title: `Cetak ${v.no_lab}`, html: `<div class="preview-bar"><a class="btn" href="#/kunjungan/${v.id}">Kembali</a>
+    <a class="btn ${jenis==='pasien'?'pri':''}" href="#/cetak/${v.id}/pasien">Lembar Pasien</a><a class="btn ${jenis==='arsip'?'pri':''}" href="#/cetak/${v.id}/arsip">Lembar Arsip</a>
+    <button class="btn pri" data-act="doPrint" data-id="${v.id}" data-j="${jenis}">Cetak</button><span class="muted">Ukuran kertas A4 portrait. Di dialog cetak, matikan "Header dan footer" bila muncul dobel.</span></div>
+    <div class="sheetwrap">${sheetHTML(v, jenis)}</div>`, mount: fitSheet};
+}
+
+/* ============ master ============ */
+const MS = {group:'hematologi', q:''};
+function vMaster(){
+  if(!can('master') && role() !== 'penanggung_jawab' && role() !== 'viewer' && role() !== 'analis') return denied();
+  const editable = can('master');
+  const gs = groupsSorted();
+  const ts = S.tests.filter(t => t.group === MS.group && (!MS.q || t.name.toLowerCase().includes(MS.q.toLowerCase()))).sort((a,b) => a.order - b.order);
+  return {title: 'Master parameter', html: `
+    ${!S.refVerified ? `<div class="banner"><span><b>Nilai rujukan belum diverifikasi.</b> Semua rujukan awal bersifat umum (nilai dewasa lazim). Cocokkan dengan insert kit dan ketentuan lab, isi batas kritis (CH/CL), lalu tandai terverifikasi.</span>${editable ? '<button class="btn sm" data-act="verifyRef">Tandai sudah diverifikasi</button>' : ''}</div>` : ''}
+    <div class="banner" style="background:#eef6f4;border-color:#cfe4e0;color:var(--ink2)"><span>Mengubah nilai rujukan hanya berlaku untuk hasil baru. Hasil lama tetap memakai rujukan yang tercatat saat disimpan.</span></div>
+    <div class="tabs">${gs.map(g => `<button class="${MS.group===g.code?'on':''}" data-act="mgroup" data-g="${g.code}">${esc(g.name)}</button>`).join('')}</div>
+    <div class="row sp" style="margin-bottom:10px"><div class="fld" style="min-width:260px"><label for="m-q">Cari parameter</label><input type="search" id="m-q" data-ms="q" value="${esc(MS.q)}"></div>${editable ? '<button class="btn pri" data-act="newTest">Tambah parameter</button>' : ''}</div>
+    <div class="panel flat" id="m-table">${masterTable(ts, editable)}</div>`};
+}
+function masterTable(ts, editable){
+  if(!ts.length) return '<div class="empty"><b>Tidak ada parameter</b>Kelompok ini belum punya parameter tetap.</div>';
+  return `<div class="scroll-x"><table><thead><tr><th>Parameter</th><th>Sub-kelompok</th><th>Satuan</th><th>Tipe</th><th>Nilai rujukan</th><th>Batas kritis</th><th>Aktif</th><th></th></tr></thead><tbody>
+  ${ts.map(t => { const crit = (t.ranges||[]).some(r => r.critLo != null || r.critHi != null);
+    return `<tr><td><b>${esc(t.name)}</b>${t.edited ? ' <span class="chip">diubah</span>' : ''}</td><td class="muted">${esc(t.sub || '')}</td><td>${esc(t.unit)}</td><td class="muted">${{num:'Angka',choice:'Pilihan',text:'Teks',combo:'Teks + saran'}[t.type]}</td><td style="white-space:pre-line;font-size:12.5px">${esc(t.ref || '-')}</td><td>${crit ? 'Ada' : '<span class="dim">Belum</span>'}</td><td>${t.active ? 'Ya' : '<span class="dim">Tidak</span>'}</td><td>${editable ? `<button class="btn sm" data-act="editTest" data-id="${t.id}">Ubah</button>` : ''}</td></tr>`; }).join('')}
+  </tbody></table></div>`;
+}
+let M = null;
+function numOrNull(s){ s = String(s ?? '').trim(); if(s === '') return null; const n = Number(s.replace(',', '.')); return isNaN(n) ? null : n; }
+function rangeRows(){
+  const numv = x => x == null ? '' : x;
+  return M.ranges.map((r, i) => `<tr data-ri="${i}">
+    <td><select data-rf="sex"><option value="">Semua</option><option value="L" ${r.sex==='L'?'selected':''}>L</option><option value="P" ${r.sex==='P'?'selected':''}>P</option></select></td>
+    <td><input type="text" data-rf="ageMin" value="${numv(r.ageMin)}" style="width:58px"></td><td><input type="text" data-rf="ageMax" value="${numv(r.ageMax)}" style="width:58px"></td>
+    <td><input type="text" data-rf="cond" value="${esc(r.cond || '')}" style="width:120px"></td>
+    <td><select data-rf="loIncl" style="width:54px"><option value="1" ${r.loIncl?'selected':''}>≥</option><option value="0" ${!r.loIncl?'selected':''}>&gt;</option></select></td><td><input type="text" data-rf="lo" value="${numv(r.lo)}" style="width:84px"></td>
+    <td><select data-rf="hiIncl" style="width:54px"><option value="1" ${r.hiIncl?'selected':''}>≤</option><option value="0" ${!r.hiIncl?'selected':''}>&lt;</option></select></td><td><input type="text" data-rf="hi" value="${numv(r.hi)}" style="width:84px"></td>
+    <td><input type="text" data-rf="critLo" value="${numv(r.critLo)}" style="width:74px"></td><td><input type="text" data-rf="critHi" value="${numv(r.critHi)}" style="width:74px"></td>
+    <td><button class="btn sm danger" data-act="delRange" data-i="${i}">Hapus</button></td></tr>`).join('');
+}
+function testModal(t){
+  const isNew = !t;
+  M = t ? clone(t) : {id: null, group: MS.group, sub: '', name: '', unit: '', ref: '', refShort: '', type: 'num', options: null, normal: null, ranges: [], dec: 0, thousands: false, order: 0, active: true};
+  const orig = t ? clone(t) : null;
+  M._auto = !!M.ranges.length && !M.ranges.some(r => r.cond);
+  openModal({title: isNew ? 'Parameter baru' : `Ubah ${t.name}`, wide: true, body: `
+    <div class="grid3">
+      <div class="fld"><label for="mt-nm">Nama parameter</label><input type="text" id="mt-nm" data-mt="name" value="${esc(M.name)}"></div>
+      <div class="fld"><label for="mt-gr">Kelompok</label><select id="mt-gr" data-mt="group">${groupsSorted().map(g => `<option value="${g.code}" ${M.group===g.code?'selected':''}>${esc(g.name)}</option>`).join('')}</select></div>
+      <div class="fld"><label for="mt-sub">Sub-kelompok</label><input type="text" id="mt-sub" data-mt="sub" value="${esc(M.sub || '')}"></div>
+      <div class="fld"><label for="mt-un">Satuan</label><input type="text" id="mt-un" data-mt="unit" value="${esc(M.unit)}"></div>
+      <div class="fld"><label for="mt-ty">Tipe hasil</label><select id="mt-ty" data-mt="type"><option value="num" ${M.type==='num'?'selected':''}>Angka</option><option value="choice" ${M.type==='choice'?'selected':''}>Pilihan</option><option value="text" ${M.type==='text'?'selected':''}>Teks bebas</option><option value="combo" ${M.type==='combo'?'selected':''}>Teks dengan saran</option></select></div>
+      <div class="fld"><label for="mt-dec">Desimal pada teks rujukan</label><input type="number" min="0" max="4" id="mt-dec" data-mt="dec" value="${M.dec}"></div>
+      <div class="fld" style="grid-column:1/-1"><label for="mt-op">Pilihan (pisahkan dengan titik koma; untuk tipe Pilihan atau Teks dengan saran)</label><input type="text" id="mt-op" data-mt="options" value="${esc((M.options || []).join('; '))}"></div>
+      <div class="fld" style="grid-column:1/-1"><label for="mt-nr">Nilai normal untuk tipe Pilihan (pisahkan dengan titik koma; hasil lain ditandai !)</label><input type="text" id="mt-nr" data-mt="normal" value="${esc((M.normal || []).join('; '))}"></div>
+    </div>
+    <h3 style="margin:16px 0 6px">Batas rujukan</h3>
+    <div class="muted" style="font-size:12.5px;margin-bottom:6px">Satu baris per kelompok pembanding. Usia dalam tahun (batas atas tidak termasuk). Kosongkan jenis kelamin untuk semua. Isi batas kritis hanya bila laboratorium sudah menetapkannya : kritis bawah berlaku bila nilai ≤ batas, kritis atas bila nilai ≥ batas.</div>
+    <div class="scroll-x"><table class="rng"><thead><tr><th>JK</th><th>Usia ≥</th><th>Usia &lt;</th><th>Kondisi / fase</th><th></th><th>Batas bawah</th><th></th><th>Batas atas</th><th>Kritis bawah</th><th>Kritis atas</th><th></th></tr></thead><tbody id="rng-body">${rangeRows()}</tbody></table></div>
+    <div class="row" style="margin:8px 0 14px"><button class="btn sm" data-act="addRange">Tambah baris batas</button></div>
+    <label class="row" style="gap:8px;margin-bottom:8px"><input type="checkbox" id="mt-auto" ${M._auto?'checked':''}> Susun teks rujukan otomatis dari batas di atas</label>
+    <div class="grid2">
+      <div class="fld"><label for="mt-ref">Teks rujukan lengkap (dicetak di Lembar Arsip)</label><textarea id="mt-ref" rows="4" data-mt="ref">${esc(M.ref)}</textarea></div>
+      <div class="fld"><label for="mt-rs">Teks rujukan ringkas (Lembar Pasien dan form)</label><textarea id="mt-rs" rows="4" data-mt="refShort">${esc(M.refShort || '')}</textarea></div>
+    </div>
+    <label class="row" style="gap:8px;margin-top:10px"><input type="checkbox" id="mt-act" ${M.active?'checked':''}> Parameter aktif (tampil di form input)</label>
+    <div class="err" id="mt-err"></div>`,
+    actions: [{label: 'Batal'}, {label: 'Simpan parameter', cls: 'pri', close: false, run: (ov, close) => {
+      const err = m => { $('#mt-err', ov).textContent = m; return false; };
+      M.name = $('#mt-nm', ov).value.trim(); if(!M.name) return err('Nama parameter wajib diisi.');
+      M.group = $('#mt-gr', ov).value; M.sub = $('#mt-sub', ov).value.trim() || null; M.unit = $('#mt-un', ov).value.trim();
+      M.type = $('#mt-ty', ov).value; M.dec = Math.max(0, Math.min(4, parseInt($('#mt-dec', ov).value) || 0));
+      M.thousands = M.unit === '/µL';
+      const lst = s => s.split(';').map(x => x.trim()).filter(Boolean);
+      M.options = (M.type === 'choice' || M.type === 'combo') ? lst($('#mt-op', ov).value) : null;
+      if((M.type === 'choice') && (!M.options || M.options.length < 2)) return err('Tipe Pilihan butuh minimal dua pilihan.');
+      M.normal = M.type === 'choice' ? (lst($('#mt-nr', ov).value).length ? lst($('#mt-nr', ov).value) : null) : null;
+      if(M.type !== 'num') M.ranges = [];
+      M.active = $('#mt-act', ov).checked;
+      if($('#mt-auto', ov).checked && M.ranges.length){ const g = genRefText(M); M.ref = g.full; M.refShort = g.short; }
+      else { M.ref = $('#mt-ref', ov).value.trim(); M.refShort = $('#mt-rs', ov).value.trim() || M.ref.replace(/\n/g, '; '); }
+      delete M._auto;
+      if(isNew){
+        M.id = M.group + '_' + M.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') + '_' + (S.nextId++);
+        M.order = Math.max(0, ...S.tests.map(x => x.order)) + 1; M.edited = true; S.tests.push(M);
+        audit('buat', 'parameter', M.id, [`${M.name} (${groupByCode(M.group).name})`, `rujukan: ${M.ref || '-'}`]);
+      } else {
+        const d = []; ['name','group','sub','unit','type','active'].forEach(k => { if(orig[k] !== M[k]) d.push(`${k}: ${orig[k] ?? '-'} → ${M[k] ?? '-'}`); });
+        if(orig.ref !== M.ref) d.push(`rujukan: ${(orig.ref||'-').replace(/\n/g,'; ')} → ${(M.ref||'-').replace(/\n/g,'; ')}`);
+        if(JSON.stringify(orig.ranges) !== JSON.stringify(M.ranges) && orig.ref === M.ref) d.push('batas rujukan atau batas kritis diubah');
+        M.edited = true; Object.assign(testById(M.id), M);
+        audit('ubah', 'parameter', M.id, d.length ? d : ['tanpa perubahan']);
+      }
+      save(); close(); toast('Parameter disimpan'); render(); return false;
+    }}]});
+}
+
+/* ============ riwayat perubahan ============ */
+const AS = {q:'', n:100};
+function auditTable(){
+  const q = AS.q.trim().toLowerCase();
+  const rows = S.audit.filter(a => !q || `${a.user} ${a.aksi} ${a.entitas} ${a.detail.join(' ')} ${a.alasan}`.toLowerCase().includes(q));
+  if(!rows.length) return '<div class="empty"><b>Belum ada catatan</b>Setiap pembuatan, perubahan, validasi, dan pencetakan akan tercatat di sini.</div>';
+  const vname = id => { const v = visitById(id); return v ? v.no_lab : id; };
+  return `<table><thead><tr><th>Waktu</th><th>Pengguna</th><th>Aksi</th><th>Objek</th><th>Rincian</th></tr></thead><tbody>${rows.slice(0, AS.n).map(a => `<tr><td style="white-space:nowrap">${fmtDT(a.t)}</td><td>${esc(a.user)}<div class="dim" style="font-size:12px">${ROLE_LABEL[a.role]}</div></td><td>${esc(a.aksi)}</td><td>${esc(a.entitas)}${a.entitas === 'kunjungan' ? ` <a href="#/kunjungan/${a.ref}">${esc(vname(a.ref))}</a>` : ''}</td><td>${a.detail.map(d => `<div>${esc(d)}</div>`).join('')}${a.alasan ? `<div class="muted"><i>Alasan : ${esc(a.alasan)}</i></div>` : ''}</td></tr>`).join('')}</tbody></table>${rows.length > AS.n ? `<div class="pager"><span class="muted">Menampilkan ${AS.n} dari ${rows.length}</span><button class="btn sm" data-act="moreAudit">Tampilkan lebih banyak</button></div>` : ''}`;
+}
+function vAudit(){
+  return {title: 'Riwayat perubahan', html: `<div class="filters"><div class="fld" style="flex:1;min-width:240px"><label for="a-q">Cari pengguna, aksi, atau rincian</label><input type="search" id="a-q" data-as="q" value="${esc(AS.q)}"></div></div><div class="panel flat" id="a-table">${auditTable()}</div>`};
+}
+
+/* ============ cadangan ============ */
+function vBackup(){
+  const bk = S.lastBackup ? fmtDT(S.lastBackup) : 'belum pernah';
+  const size = (JSON.stringify(S).length / 1024).toFixed(0);
+  return {title: 'Cadangan data', html: `
+    <div class="panel"><h2>Ekspor cadangan</h2><p class="muted" style="margin-top:0">Semua data (pasien, kunjungan, master parameter, pengaturan, dan riwayat perubahan) disimpan di browser komputer ini. Browser bisa kehilangan data bila cache dibersihkan atau profil dihapus, jadi simpan salinan file secara berkala di flashdisk atau folder lain.</p>
+      <div class="row"><button class="btn pri" data-act="exportBackup">Unduh cadangan (JSON)</button><span class="muted">Cadangan terakhir : ${bk} · ukuran data sekitar ${size} KB</span></div></div>
+    <div class="panel"><h2>Pulihkan dari cadangan</h2><p class="muted" style="margin-top:0">Memulihkan akan <b>mengganti seluruh data</b> di browser ini dengan isi file cadangan. Unduh cadangan baru dulu bila data saat ini masih penting.</p>
+      <div class="row"><input type="file" id="importFile" accept=".json,application/json" style="max-width:360px"><button class="btn" data-act="importBackup">Pulihkan</button></div></div>
+    ${can('settings') ? `<div class="panel"><h2>Data contoh dan reset</h2><p class="muted" style="margin-top:0">Data contoh berguna untuk mencoba tampilan. Hapus semuanya sebelum dipakai sungguhan.</p><div class="row"><button class="btn" data-act="demo">Isi data contoh</button><button class="btn danger" data-act="resetAll">Hapus semua data pasien dan kunjungan</button></div></div>` : ''}`};
+}
+
+/* ============ pengaturan ============ */
+function vSettings(){
+  if(!can('settings')) return denied();
+  const s = S.settings;
+  const fl = (l, k, ex = '') => `<div class="fld"><label for="s-${k}">${l}</label><input type="text" id="s-${k}" data-set="${k}" value="${esc(s[k])}" ${ex}></div>`;
+  return {title: 'Pengaturan', html: `
+    <div class="panel"><h2>Identitas laboratorium (kop lembar hasil)</h2><div class="grid2">${fl('Nama rumah sakit','nama')}${fl('Unit','unit')}<div style="grid-column:1/-1">${fl('Alamat','alamat')}</div>${fl('Telepon','telp')}${fl('Email','email')}</div>
+      <div class="row" style="margin-top:12px">${s.logo ? `<img src="${esc(s.logo)}" alt="Logo" style="height:56px;width:56px;object-fit:contain;border:1px solid var(--line);border-radius:8px;padding:3px">` : ''}<div class="fld"><label for="s-logo">${s.logo ? 'Ganti logo' : 'Unggah logo'} (PNG atau JPG, maksimal 400 KB)</label><input type="file" id="s-logo" accept="image/*" data-img="logo"></div>${s.logo ? '<button class="btn sm" data-act="rmLogo">Hapus logo</button>' : ''}</div></div>
+    <div class="panel"><h2>Penanggung jawab laboratorium (tanda tangan di lembar hasil)</h2><div class="grid3">${fl('Nama dan gelar','pj_nama')}${fl('Nomor SIP','pj_sip')}${fl('Kota tanda tangan','kota')}</div>
+      <div class="row" style="margin-top:12px">${s.ttd ? `<img src="${esc(s.ttd)}" alt="Tanda tangan" style="height:50px;border:1px solid var(--line);border-radius:8px;padding:3px;background:#fff">` : ''}<div class="fld"><label for="s-ttd">Gambar tanda tangan (opsional, latar transparan paling baik)</label><input type="file" id="s-ttd" accept="image/*" data-img="ttd"></div>${s.ttd ? '<button class="btn sm" data-act="rmTtd">Hapus gambar</button>' : ''}</div>
+      <p class="muted" style="margin-bottom:0;font-size:13px">Lembar hasil hanya memuat satu tanda tangan, yaitu penanggung jawab laboratorium. Tanpa gambar, ruang kosong disediakan untuk tanda tangan basah.</p></div>
+    <div class="panel"><h2>Pengguna</h2><div class="banner bad" style="margin-bottom:10px"><span>Pilihan pengguna dan peran hanya mengatur tampilan dan mencatat nama di riwayat. Tidak ada kata sandi, jadi siapa pun yang membuka file ini bisa berganti peran. Untuk akses yang benar-benar terkunci, pakai versi server.</span></div>
+      <table><thead><tr><th>Nama</th><th>Peran</th><th></th></tr></thead><tbody>${S.users.map(u => `<tr><td><input type="text" data-user="${u.id}" data-k="name" value="${esc(u.name)}"></td><td><select data-user="${u.id}" data-k="role">${Object.entries(ROLE_LABEL).map(([k,l]) => `<option value="${k}" ${u.role===k?'selected':''}>${l}</option>`).join('')}</select></td><td><button class="btn sm danger" data-act="delUser" data-id="${u.id}">Hapus</button></td></tr>`).join('')}</tbody></table>
+      <div class="row" style="margin-top:10px"><button class="btn" data-act="addUser">Tambah pengguna</button></div></div>`};
+}
+
+/* ============ tentang ============ */
+function vAbout(){
+  const nT = S.tests.length, nG = S.groups.filter(g => g.code !== 'lainnya').length;
+  return {title: 'Tentang', html: `<div class="about">
+    <div class="panel"><div class="row" style="gap:16px;align-items:flex-start;flex-wrap:nowrap">
+      <svg width="52" height="52" viewBox="0 0 32 32" aria-hidden="true" style="flex:none"><rect width="32" height="32" rx="7" fill="#10333a"/><path d="M12 6h8v2h-1v7l4 8a2 2 0 0 1-2 3H11a2 2 0 0 1-2-3l4-8V8h-1z" fill="none" stroke="#5fd0c4" stroke-width="2" stroke-linejoin="round"/></svg>
+      <div><h2 style="font-size:20px">Hasil Laboratorium Klinik</h2><div class="muted" style="margin-bottom:10px">Versi ${APP_VERSION}</div>
+      <p>Aplikasi untuk mencatat hasil pemeriksaan laboratorium, menandai nilai di luar rujukan, dan mencetak lembar hasil di kertas A4.</p>
+      <p style="margin:0"><b>Dibuat oleh AbdiSR.</b></p></div></div></div>
+    <div class="panel"><h2>Cara kerja dan privasi</h2>
+      <ul><li>Seluruh aplikasi adalah satu halaman web yang berjalan di browser Anda. Tidak ada server dan tidak ada akun.</li>
+      <li>Data pasien dan hasil disimpan hanya di browser perangkat ini. Data tidak dikirim ke internet, dan aplikasi diatur agar tidak bisa membuat sambungan keluar.</li>
+      <li>Karena itu data tidak ikut berpindah ke perangkat lain. Pakai menu Cadangan data untuk menyimpan salinan atau memindahkan data.</li>
+      <li>Membersihkan data situs atau memakai mode privat dapat menghapus data. Unduh cadangan secara berkala.</li></ul></div>
+    <div class="panel"><h2>Batasan yang perlu diketahui</h2>
+      <ul><li>Ini alat bantu pencatatan, bukan perangkat medis dan bukan pengganti sistem informasi laboratorium resmi.</li>
+      <li>Pilihan pengguna dan peran tidak memakai kata sandi. Fungsinya mengatur tampilan dan mencatat nama di riwayat perubahan, bukan mengunci akses.</li>
+      <li>Nilai rujukan bawaan bersifat umum dan belum diverifikasi. Cocokkan dengan insert kit, metode alat, dan ketentuan laboratorium Anda. Batas kritis (CH/CL) sengaja dikosongkan agar ditetapkan oleh laboratorium.</li>
+      <li>Hasil yang dicetak menjadi tanggung jawab laboratorium yang menerbitkannya.</li></ul></div>
+    <div class="panel"><h2>Sumber parameter</h2>
+      <p>Daftar parameter imunologi disusun dengan acuan brosur Wondfo FS-113, AGD dengan acuan Wondfo BGA-102, dan elektrolit dengan acuan Erba EC 90. Brosur tersebut tidak selalu memuat satuan dan rentang rujukan, sehingga bagian itu memakai nilai dewasa yang lazim dan perlu diverifikasi.</p>
+      <p style="margin:0">Nama merek dan alat adalah milik pemiliknya masing-masing. Aplikasi ini tidak berafiliasi dengan mereka.</p></div>
+    <div class="panel"><h2>Isi aplikasi saat ini</h2>
+      <dl class="kv"><dt>Versi</dt><dd>${APP_VERSION}</dd><dt>Kelompok pemeriksaan</dt><dd>${nG} kelompok</dd><dt>Parameter</dt><dd>${nT} parameter</dd><dt>Pasien tersimpan</dt><dd>${S.patients.length}</dd><dt>Kunjungan tersimpan</dt><dd>${activeVisits().length}</dd><dt>Penyimpanan</dt><dd>${storeMode === 'idb' ? 'IndexedDB browser' : storeMode === 'ls' ? 'localStorage (terbatas)' : 'gagal menyimpan'}</dd></dl></div>
+  </div>`};
+}
+
+/* ============ data contoh ============ */
+function mkResult(tid, val, p, date, cond, flagOverride){
+  const t = testById(tid), ev = evalResult(t, val, cond || '', p.jk, ageYears(p.tgl_lahir, date));
+  return [tid, {val: String(val), cond: cond || '', flag: flagOverride ?? ev.flag, manual: !!flagOverride, abn: ev.abn, ...snapshotOf(t)}];
+}
+function demoData(){
+  const td = today();
+  const mkP = (rm, nama, jk, dob, al) => { const p = {id: uid('p'), no_rm: rm, nama, jk, tgl_lahir: dob, alamat: al, telp: '', created: Date.now()}; S.patients.push(p); return p; };
+  const budi = mkP('RM-000101', 'Budi Santoso (contoh)', 'L', '1984-03-12', 'Alamat contoh');
+  const siti = mkP('RM-000102', 'Siti Aminah (contoh)', 'P', '1992-09-30', 'Alamat contoh');
+  const agus = mkP('RM-000103', 'Agus Hermawan (contoh)', 'L', '1958-01-05', 'Alamat contoh');
+  const mk = (p, offset, groups, rows, status, extra = {}) => {
+    const d = addDays(td, -offset);
+    const results = Object.fromEntries(rows.map(r => mkResult(r[0], r[1], p, d, r[2], r[3])));
+    const v = {id: uid('v'), no_lab: nextLabNo(), patient_id: p.id, tgl_sampel: d, tgl_periksa: d, tgl_hasil: status === 'draft' ? '' : d, dokter: 'dr. Contoh', ruangan: 'Poli Umum', diagnosis: '', sampel: 'Darah', catatan: '', groups, results, status, created: Date.now() - offset * 86400000, created_by: 'Admin', validated_by: status === 'tervalidasi' ? 'Admin' : null, validated_at: status === 'tervalidasi' ? Date.now() - offset * 86400000 : null, deleted: false, ...extra};
+    S.visits.push(v); audit('buat', 'kunjungan', v.id, [`${v.no_lab} untuk ${p.nama}`, 'data contoh']);
+  };
+  mk(budi, 9, ['hematologi','kimia_klinik'], [['hematologi_hemoglobin', 14.2], ['hematologi_leukosit', 7200], ['hematologi_trombosit', 260000], ['kimia_klinik_trigliserida', 128], ['kimia_klinik_kolesterol_total', 190]], 'tervalidasi');
+  mk(budi, 2, ['hematologi','kimia_klinik'], [['hematologi_hemoglobin', 13.1], ['hematologi_leukosit', 11800], ['hematologi_trombosit', 410000], ['kimia_klinik_trigliserida', 215], ['kimia_klinik_kolesterol_total', 236]], 'tervalidasi');
+  mk(siti, 5, ['hematologi','imunologi'], [['hematologi_hemoglobin', 10.8], ['hematologi_leukosit', 6900], ['imunologi_crp', 4.2], ['imunologi_tsh', 2.1]], 'tervalidasi');
+  mk(siti, 0, ['hematologi','urinalisis'], [['hematologi_hemoglobin', 11.4], ['hematologi_trombosit', 330000], ['urinalisis_protein', 'Negatif'], ['urinalisis_nitrit', 'Positif'], ['urinalisis_leukosit', 12]], 'selesai');
+  mk(agus, 1, ['elektrolit','kimia_klinik'], [['elektrolit_natrium_na', 131], ['elektrolit_kalium_k', 6.9, '', 'CH'], ['elektrolit_klorida_cl', 99], ['kimia_klinik_ureum', 88], ['kimia_klinik_kreatinin', 2.4]], 'selesai');
+  mk(agus, 0, ['agd'], [['agd_jenis_sampel', 'Arteri'], ['agd_ph', 7.31], ['agd_pco2', 48], ['agd_po2', 74]], 'draft');
+  save();
+}
+
+/* ============ event wiring ============ */
+const actions = {
+  async demo(){ if(S.patients.length && !(await confirmBox('Data contoh akan ditambahkan ke data yang sudah ada. Lanjutkan?'))) return; demoData(); toast('Data contoh ditambahkan'); render(); },
+  async resetAll(){ if(!(await confirmBox('Semua pasien, kunjungan, dan riwayat perubahan akan dihapus. Master parameter dan pengaturan tetap. Lanjutkan?', 'Hapus semua', true))) return; S.patients = []; S.visits = []; S.audit = []; S.seq = {}; audit('reset', 'data', '', ['semua data pasien dan kunjungan dihapus']); save(); toast('Data dihapus'); render(); },
+  pg(a){ LS.page += +a.dataset.d; $('#vis-table').innerHTML = visitsTable(); },
+  csv(){
+    const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const head = ['No. lab','Tgl. periksa','No. RM','Nama','JK','Status','Kelompok','Jumlah hasil','Abnormal','Kritis'];
+    const rows = filterVisits().map(v => { const p = patientById(v.patient_id) || {}; return [v.no_lab, fmtDate(v.tgl_periksa), p.no_rm, p.nama, p.jk, STATUS_LABEL[v.status], (v.groups||[]).map(g => groupByCode(g)?.name).join(' + '), Object.keys(v.results||{}).length, hasAbn(v) ? 'ya' : 'tidak', hasCrit(v) ? 'ya' : 'tidak'].map(q).join(';'); });
+    download(`kunjungan-${today()}.csv`, '﻿' + head.map(q).join(';') + '\r\n' + rows.join('\r\n'), 'text/csv;charset=utf-8');
+  },
+  newPatient(a){ patientModal(null, np => { if(a.dataset.back){ F.patient_id = np.id; formDirty = true; renderPatientBox(); recomputeAll(); } else render(); }); },
+  editPatient(a){ patientModal(patientById(a.dataset.id), () => { if(a.dataset.back){ renderPatientBox(); recomputeAll(); } else render(); }); },
+  pickPatient(a){ F.patient_id = a.dataset.id; formDirty = true; renderPatientBox(); recomputeAll(); },
+  changePatient(){ F.patient_id = null; renderPatientBox(); recomputeAll(); },
+  flagAuto(a){ const r = F.results[a.dataset.tid]; if(r){ r.manual = false; updateRow(a.dataset.tid); } },
+  addExtra(){ const n = F.extra.length + 1; F.extra.push({id: 'x' + n, name: '', val: '', unit: '', ref: '', flag: ''}); $('#extra-body').innerHTML = extraRows(); formDirty = true; },
+  delExtra(a){ F.extra.splice(+a.dataset.i, 1); F.extra.forEach((x, i) => x.id = 'x' + (i+1)); $('#extra-body').innerHTML = extraRows(); formDirty = true; },
+  saveDraft(){ saveForm(false); },
+  saveDone(){ saveForm(true); },
+  async markDone(a){ const v = visitById(a.dataset.id); if(!Object.keys(v.results).length) return toast('Isi minimal satu hasil dulu.', true); v.status = 'selesai'; v.tgl_hasil = v.tgl_hasil || today(); audit('selesai', 'kunjungan', v.id, ['status: draft → selesai']); save(); toast('Ditandai selesai'); render(); },
+  async validate(a){ if(!can('validate')) return; const v = visitById(a.dataset.id);
+    const warn = hasCrit(v) ? 'Kunjungan ini memuat hasil kritis (CH/CL). ' : '';
+    if(!(await confirmBox(warn + 'Validasi hasil ini? Setelah tervalidasi, perubahan butuh alasan tertulis.', 'Validasi'))) return;
+    v.status = 'tervalidasi'; v.validated_by = curUser().name; v.validated_at = Date.now(); audit('validasi', 'kunjungan', v.id, ['status: selesai → tervalidasi']); save(); toast('Hasil divalidasi'); render(); },
+  async delVisit(a){ if(!can('delete')) return; const v = visitById(a.dataset.id); const r = await askReason('Hapus kunjungan', `Kunjungan ${v.no_lab} akan disembunyikan dari daftar. Catatannya tetap ada di riwayat perubahan.`); if(!r) return; v.deleted = true; audit('hapus', 'kunjungan', v.id, [v.no_lab], r); save(); toast('Kunjungan dihapus'); location.hash = '#/kunjungan'; },
+  vtab(a){ VT.tab = a.dataset.t; render(); },
+  doPrint(a){ const v = visitById(a.dataset.id); audit('cetak', 'kunjungan', v.id, [`Lembar ${a.dataset.j === 'pasien' ? 'Pasien' : 'Arsip'}`]); save(); window.print(); },
+  mgroup(a){ MS.group = a.dataset.g; render(); },
+  newTest(){ testModal(null); },
+  editTest(a){ testModal(testById(a.dataset.id)); },
+  addRange(){ M.ranges.push({sex:null, ageMin:null, ageMax:null, cond:null, lo:null, hi:null, loIncl:true, hiIncl:true, critLo:null, critHi:null}); $('#rng-body').innerHTML = rangeRows(); },
+  delRange(a){ M.ranges.splice(+a.dataset.i, 1); $('#rng-body').innerHTML = rangeRows(); },
+  async verifyRef(){ if(!(await confirmBox('Tandai bahwa nilai rujukan sudah dicocokkan dengan ketentuan laboratorium?'))) return; S.refVerified = true; audit('verifikasi', 'master', '', ['nilai rujukan ditandai terverifikasi']); save(); render(); },
+  moreAudit(){ AS.n += 200; $('#a-table').innerHTML = auditTable(); },
+  exportBackup(){ S.lastBackup = Date.now(); audit('ekspor', 'cadangan', '', []); save(); const d = new Date(); download(`lab-cadangan-${isoDate(d)}-${pad(d.getHours())}${pad(d.getMinutes())}.json`, JSON.stringify(S), 'application/json'); toast('Cadangan diunduh'); render(); },
+  async importBackup(){
+    const f = $('#importFile').files[0]; if(!f) return toast('Pilih file cadangan dulu.', true);
+    let data; try { data = JSON.parse(await f.text()); } catch(e){ return toast('File bukan cadangan yang valid.', true); }
+    if(!data || !Array.isArray(data.patients) || !Array.isArray(data.visits) || !Array.isArray(data.tests) || !data.settings) return toast('Isi file tidak sesuai format cadangan aplikasi ini.', true);
+    if(!(await confirmBox(`Data saat ini akan diganti dengan cadangan (${data.patients.length} pasien, ${data.visits.length} kunjungan). Lanjutkan?`, 'Pulihkan', true))) return;
+    S = data; audit('pulihkan', 'cadangan', '', [`${data.patients.length} pasien, ${data.visits.length} kunjungan`]); await save(true); renderUserSel(); toast('Data dipulihkan'); render();
+  },
+  rmLogo(){ S.settings.logo = ''; save(); render(); },
+  rmTtd(){ S.settings.ttd = ''; save(); render(); },
+  addUser(){ S.users.push({id: uid('u'), name: 'Pengguna baru', role: 'analis'}); save(); renderUserSel(); render(); },
+  async delUser(a){ if(S.users.length <= 1) return toast('Minimal satu pengguna.', true); if(S.users.filter(u => u.role === 'admin').length === 1 && S.users.find(u => u.id === a.dataset.id).role === 'admin') return toast('Harus ada minimal satu admin.', true); if(!(await confirmBox('Hapus pengguna ini? Riwayat lama tetap menyimpan namanya.', 'Hapus', true))) return; S.users = S.users.filter(u => u.id !== a.dataset.id); save(); renderUserSel(); render(); }
+};
+function setDrawer(open){
+  $('#rail').classList.toggle('open', open); $('#scrim').classList.toggle('on', open);
+  $('#hamb').setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+function fitSheet(){
+  const sh = $('.sheet'), wrap = $('.sheetwrap'); if(!sh || !wrap) return;
+  sh.style.zoom = '';
+  const z = Math.min(1, wrap.clientWidth / (sh.offsetWidth + 4));
+  if(z < 1) sh.style.zoom = z.toFixed(3);
+}
+window.addEventListener('resize', fitSheet);
+document.addEventListener('keydown', e => { if(e.key === 'Escape') setDrawer(false); });
+document.addEventListener('click', e => {
+  if(e.target.closest('#hamb')){ setDrawer(!$('#rail').classList.contains('open')); return; }
+  if(e.target.closest('#scrim') || e.target.closest('#nav a')) setDrawer(false);
+  const a = e.target.closest('[data-act]');
+  if(a && !a.disabled){ const fn = actions[a.dataset.act]; if(fn){ e.preventDefault(); fn(a, e); } return; }
+  const link = e.target.closest('a[href^="#"]');
+  if(link && formDirty && !location.hash.startsWith('#/cetak') && link.getAttribute('href') !== location.hash){
+    e.preventDefault();
+    const href = link.getAttribute('href');
+    confirmBox('Ada isian yang belum disimpan. Tinggalkan halaman ini?', 'Tinggalkan', true).then(ok => { if(ok){ formDirty = false; location.hash = href; } });
+  }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if(t.dataset.f !== undefined && F){ F[t.dataset.f] = t.value; formDirty = true; if(t.dataset.f === 'tgl_periksa') { renderPatientBox(); recomputeAll(); } return; }
+  if(t.dataset.res && F){
+    const tid = t.dataset.res, r = F.results[tid] || (F.results[tid] = {});
+    r.val = t.value; r.fresh = true; formDirty = true; updateRow(tid); return;
+  }
+  if(t.dataset.xf && F){ const i = +t.closest('tr').dataset.x; F.extra[i][t.dataset.xf] = t.value; formDirty = true; return; }
+  if(t.id === 'pt-q'){ suggest(t.value); return; }
+  if(t.dataset.ls !== undefined){ LS[t.dataset.ls] = t.value; LS.page = 1; $('#vis-table').innerHTML = visitsTable(); return; }
+  if(t.dataset.ps !== undefined){ PS.q = t.value; $('#pt-table').innerHTML = patientsTable(); return; }
+  if(t.dataset.ms !== undefined){ MS.q = t.value; render(); const i = $('#m-q'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); return; }
+  if(t.dataset.as !== undefined){ AS.q = t.value; $('#a-table').innerHTML = auditTable(); return; }
+  if(t.dataset.set !== undefined){ S.settings[t.dataset.set] = t.value; save(); if(['nama'].includes(t.dataset.set)) $('#brandName').textContent = t.value || 'Hasil Laboratorium'; return; }
+  if(t.dataset.user){ const u = S.users.find(x => x.id === t.dataset.user); if(u){ u[t.dataset.k] = t.value; save(); renderUserSel(); } return; }
+  if(t.dataset.rf && M){ const i = +t.closest('tr').dataset.ri, k = t.dataset.rf, r = M.ranges[i];
+    if(['lo','hi','critLo','critHi','ageMin','ageMax'].includes(k)) r[k] = numOrNull(t.value); else if(k === 'cond') r.cond = t.value.trim() || null; else if(k === 'sex') r.sex = t.value || null; else if(k === 'loIncl' || k === 'hiIncl') r[k] = t.value === '1'; }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if(t.dataset.grp && F){
+    const c = t.dataset.grp; F.groups = t.checked ? [...F.groups, c] : F.groups.filter(x => x !== c); formDirty = true;
+    t.closest('.gchip').classList.toggle('on', t.checked);
+    renderResBox(); return;
+  }
+  if(t.dataset.cond && F){ const tid = t.dataset.cond, r = F.results[tid] || (F.results[tid] = {}); r.cond = t.value; r.fresh = true; formDirty = true; updateRow(tid); return; }
+  if(t.dataset.flag && F){ const tid = t.dataset.flag, r = F.results[tid] || (F.results[tid] = {}); r.flag = t.value; r.manual = true; formDirty = true; updateRow(tid); return; }
+  if(t.dataset.res && F && t.tagName === 'SELECT'){ const tid = t.dataset.res, r = F.results[tid] || (F.results[tid] = {}); r.val = t.value; r.fresh = true; formDirty = true; updateRow(tid); return; }
+  if(t.dataset.xf && F && t.tagName === 'SELECT'){ const i = +t.closest('tr').dataset.x; F.extra[i][t.dataset.xf] = t.value; formDirty = true; return; }
+  if(t.id === 'mt-auto' && M){ return; }
+  if(t.id === 'tr-sel'){ PT.tid = t.value; const p = patientById(PT.id); $('#trend').innerHTML = trendHTML(p, PT.cnt[PT.tid]); return; }
+  if(t.dataset.img){
+    const f = t.files[0]; if(!f) return;
+    if(f.size > 400 * 1024){ toast('Gambar terlalu besar (maksimal 400 KB).', true); t.value = ''; return; }
+    const rd = new FileReader(); rd.onload = () => { S.settings[t.dataset.img] = rd.result; audit('ubah', 'pengaturan', '', [`${t.dataset.img} diganti`]); save(); render(); }; rd.readAsDataURL(f); return;
+  }
+  if(t.id === 'userSel'){ setUser(t.value); render(); return; }
+});
+window.addEventListener('beforeunload', e => { if(formDirty){ e.preventDefault(); e.returnValue = ''; } });
+window.addEventListener('hashchange', () => {
+  setDrawer(false); if(!location.hash.includes('/ubah') && !location.hash.includes('/baru')) formDirty = false; render(); });
+
+function onboard(){
+  const s = S.settings;
+  const f = (id, l, v, full) => `<div class="fld" ${full ? 'style="grid-column:1/-1"' : ''}><label for="${id}">${l}</label><input type="text" id="${id}" value="${esc(v)}"></div>`;
+  openModal({title: 'Selamat datang', body: `<p class="muted" style="margin-top:0">Isi identitas laboratorium untuk kop lembar hasil. Bagian ini boleh dilewati dan bisa diubah kapan saja di Pengaturan. Semua data disimpan hanya di browser ini dan tidak dikirim ke mana pun.</p>
+    <div class="grid2">${f('ob-nama','Nama rumah sakit / klinik', s.nama, true)}${f('ob-unit','Unit', s.unit)}${f('ob-telp','Telepon', s.telp)}${f('ob-alamat','Alamat', s.alamat, true)}${f('ob-email','Email', s.email)}${f('ob-kota','Kota tanda tangan', s.kota)}${f('ob-pj','Penanggung jawab (nama dan gelar)', s.pj_nama)}${f('ob-sip','Nomor SIP', s.pj_sip)}</div>`,
+    actions: [{label: 'Lewati'}, {label: 'Simpan identitas', cls: 'pri', run: ov => {
+      const g = id => $('#' + id, ov).value.trim();
+      Object.assign(S.settings, {nama: g('ob-nama'), unit: g('ob-unit'), telp: g('ob-telp'), alamat: g('ob-alamat'), email: g('ob-email'), kota: g('ob-kota'), pj_nama: g('ob-pj'), pj_sip: g('ob-sip')});
+      audit('ubah', 'pengaturan', '', ['identitas laboratorium diisi']); save(); render();
+    }}]});
+}
+(async function init(){
+  await load();
+  if(!S.tests || !S.groups) { S = fresh(); }
+  renderUserSel();
+  setPill();
+  render();
+  if(!S.onboarded && !S.settings.nama){ S.onboarded = true; save(); onboard(); }
+})();
+</script>
+</body>
+</html>
